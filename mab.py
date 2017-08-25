@@ -1,11 +1,10 @@
 import numpy as np 
 import random, math, os, time, csv
 
-codes = {
-	"practice": { "mus": [50, 30, 10], "sigmas": [10, 10, 30]},
-	"realdeal": { "mus": [40, 70, 50], "sigmas": [35, 25, 5]}
-}
-
+"""
+Bandit: creates an n-armed bandit with either random or specified normal distributions,
+		parameterized by mu, sigma
+"""
 class Bandit:
 	def __init__(self, n_arms, mus=None, sigmas=None):
 		self.t = 1
@@ -52,17 +51,30 @@ class Bandit:
 	def estimate(self):
 		return self.thetas
 
-def run_experiment():
-	n_arms = 3
-	bandit = Bandit(n_arms)
+def run_experiment(n_arms=3):
+	# Codes for fixed parameters on practice and experiment rounds
+	codes = {
+		"practice": { "mus": [50, 30, 10], "sigmas": [10, 10, 30]},
+		"realdeal": { "mus": [40, 70, 50], "sigmas": [35, 25, 5]}
+	}
 
 	code = input("[Optional] Please enter valid code:  ")
 	if code in codes:
-		bandit.reset_dists(codes[code]["mus"], codes[code]["sigmas"])
+		bandit = Bandit(n_arms, mus=codes[code]["mus"], sigmas=codes[code]["sigmas"])
 		print("Loading game with code {}...".format(code), end="\r")
-		time.sleep(1)
+	else:
+		bandit = Bandit(n_arms)
+		print("Loading game...", end="\r")
+	time.sleep(1)
 
-	num_rounds = 16
+	# Get ranges within 2 std dev
+	num_sigmas = 2
+	ranges = []
+	for (m,s) in list((zip(bandit.mus,bandit.sigmas))):
+		ranges.append(m + num_sigmas * s)
+		ranges.append(m - num_sigmas * s)
+
+	num_rounds = 10
 	history = { 
 		"agent_decision": [], 
 		"human_decision": [], 
@@ -77,9 +89,9 @@ def run_experiment():
 	cumulative_reward = 0
 
 	# Instructions
-	print("There are {} arms to pull, each with a different distribution of rewards ($). You want to maximize your rewards as a team. You will be prompted to take turns playing arms, but you will both reveal suggestions to your partner in all rounds. \n When asked for a reason for your choice in arms, here are a few examples you could use: \n\
-		 \"I chose this because it did well before\", \"it's the best\", \"haven't tried this one\", \"it was random\"".format(n_arms))
-	ready = input("Ready to begin? ")
+	print("There are {} arms to pull, each with a different distribution of rewards ($), most (95%) of which range from {} to {}. You want to maximize your rewards as a team. You will be prompted to take turns playing arms, but you will both reveal suggestions to your partner in all rounds. \n When asked for a reason for your choice in arms, here are a few examples you could use: \n\
+		 \"I chose this because it did well before\", \"it's the best\", \"haven't tried this one\", \"it was random\"".format(n_arms, min(ranges), max(ranges)))
+	ready = input("Ready to begin (y/[n])?  ")
 	while ready.lower() not in ["yes", "y"]:
 		ready = input("Ready to begin? ")
 
@@ -108,9 +120,9 @@ def run_experiment():
 			reason = input(reason_prompt)
 			print("\033[A{}\033A".format("*"*(len(reason)+len(reason_prompt))))
 			time.sleep(0.1)
-			suggestions.append((player, suggestion))
-			confidences.append((player, confidence))
-			reasons.append((player, reason))
+			suggestions.append((int(player), int(suggestion)))
+			confidences.append((int(player), int(confidence)))
+			reasons.append((int(player), reason))
 
 		# Ask active player to pull arm
 		arm = input("Player {} Decision: It's your turn. Based on this information, what arm do decide to play (type one of the following numbers): {}?  ".format(player, [i for i in range(n_arms)]))
@@ -141,13 +153,8 @@ def run_experiment():
 		agent_cumulative_reward += reward
 	history["agent_cumulative_reward"] = agent_cumulative_reward
 
-	print("That's it! Your joint total {} and how that compares to an agent alone {}".format(int(cumulative_reward * 100), int(agent_cumulative_reward * 100)))
-
-	# @Dorsa, if you want to view the parameters, uncomment this print statement 
-	# print("The distributions (mean, sd) of each arm were, from arm 0 to 2: {}".format(zip(bandit.mus, bandit.sigmas)))
-	
 	print("\n\nHistory: {}".format(history))
-	with open("pilot_data.csv", "w") as f:
+	with open("pilot_data.csv", "a") as f:
 		w = csv.writer(f)
 		i = 1
 		for k, v in history.items():
@@ -157,6 +164,16 @@ def run_experiment():
 		w.writerow(["human_cumulative_reward", history["human_cumulative_reward"]])
 		w.writerow(["agent_cumulative_reward", history["agent_cumulative_reward"]])
 
+	print("That's it! Your joint total {} and how that compares to an agent alone {}".format(int(cumulative_reward * 100), int(agent_cumulative_reward * 100)))
+
+	# @Dorsa, if you want to view the parameters, uncomment this print statement 
+	# print("The distributions (mean, sd) of each arm were, from arm 0 to 2: {}".format(zip(bandit.mus, bandit.sigmas)))
+	
+	play_again = input("Would you like to play again (y/[n])?  ")
+	if play_again in ["yes", "y"]:
+		run_experiment()
+	return
+	
 run_experiment()
 
 
