@@ -1,5 +1,10 @@
 import numpy as np 
-import random, math
+import random, math, os, time, csv
+
+codes = {
+	"practice": { "mus": [50, 30, 10], "sigmas": [10, 10, 30]},
+	"realdeal": { "mus": [40, 70, 50], "sigmas": [35, 25, 5]}
+}
 
 class Bandit:
 	def __init__(self, n_arms, mus=None, sigmas=None):
@@ -17,12 +22,15 @@ class Bandit:
 		self.thetas = [uniform_prior] * n_arms
 		self.reward_history = []
 
+	def reset_dists(self, mus, sigmas):
+		self.mus = mus
+		self.sigmas = sigmas
+
 	# Human pulls an arm and observes a reward (+ agent updates posterior)
 	def pull_arm(self, arm):
 		self.t += 1
 		reward = np.random.normal(self.mus[arm], self.sigmas[arm])
 		reward = int(reward * 100) / 100.0
-		print(reward)
 
 		# Update agent's Bayesian posterior (normalized)
 		self.reward_history.append(reward)
@@ -44,39 +52,82 @@ class Bandit:
 	def estimate(self):
 		return self.thetas
 
-def test_bandit():
+def run_experiment():
 	n_arms = 3
 	bandit = Bandit(n_arms)
 
+	code = input("[Optional] Please enter valid code:  ")
+	if code in codes:
+		bandit.reset_dists(codes[code]["mus"], codes[code]["sigmas"])
+		print("Loading game with code {}...".format(code), end="\r")
+		time.sleep(1)
+
 	num_rounds = 16
-	history = { "human": [], "agent": [], "reasons": [], "rewards": [], "cumulative_reward": 0, "agent_cumulative_reward": 0 }
+	history = { 
+		"agent_decision": [], 
+		"human_decision": [], 
+		"active_player": [],
+		"suggestions": [],
+		"confidences": [],
+		"reasons": [],
+		"reward": [], 
+		"human_cumulative_reward": 0, 
+		"agent_cumulative_reward": 0 
+	}
 	cumulative_reward = 0
 
 	# Instructions
-	print("There are {} arms to pull, each with a different distribution of rewards. You want to maximize your rewards.".format(n_arms))
+	print("There are {} arms to pull, each with a different distribution of rewards ($). You want to maximize your rewards as a team. You will be prompted to take turns playing arms, but you will both reveal suggestions to your partner in all rounds. \n When asked for a reason for your choice in arms, here are a few examples you could use: \n\
+		 \"I chose this because it did well before\", \"it's the best\", \"haven't tried this one\", \"it was random\"".format(n_arms))
+	ready = input("Ready to begin? ")
+	while ready.lower() not in ["yes", "y"]:
+		ready = input("Ready to begin? ")
 
 	for _ in range(num_rounds):
-		print("Round {}...".format(bandit.t))
+		print("Round {} / {}...".format(bandit.t, num_rounds))
 
 		# Agent's estimate
 		thetas = bandit.estimate()
 		agent_arm = np.argmax(thetas)
 
-		player = "1" if bandit.t % 2 == 1 else "2"
-		# Ask player 1 to pull an arm (+ give reason) 
-		arm = input("Player {}: Which arm do you pull (type one of the following numbers): {}?  ".format(player, [i for i in range(n_arms)]))
+		# 1st player is active (makes the play), 2nd passive
+		players = ["1", "2"]
+		if bandit.t % 2 == 0:
+			players.reverse()
+
+		# Ask players to identify an arm, give confidence score, and privately give reason
+		suggestions, confidences, reasons = [], [], []
+		for player in players:
+			suggestion = input("Player {} Suggestion: What arm do SUGGEST playing next (type one of the following numbers): {}?  ".format(player, [i for i in range(n_arms)]))
+			while suggestion not in [str(i) for i in range(n_arms)]:
+				suggestion = input("Player {} Suggestion: That's not one of the options. What arm do SUGGEST playing next (type one of the following numbers): {}?  ".format(player, [i for i in range(n_arms)]))
+			confidence = input("Player {} Confidence: On a scale of 1 to 5, how CONFIDENT are you in this decision, with 5 being the most confident?  ".format(player))
+			while confidence not in [str(i) for i in range(1,6)]:
+				confidence = input("Player {} Confidence: That's not one of the options. On a scale of 1 to 5, how CONFIDENT are you in this decision?  ".format(player))
+			reason_prompt = "[Private] Player {} Reason: What REASON do you suggest playing that arm? ".format(player)
+			reason = input(reason_prompt)
+			print("\033[A{}\033A".format("*"*(len(reason)+len(reason_prompt))))
+			time.sleep(0.1)
+			suggestions.append((player, suggestion))
+			confidences.append((player, confidence))
+			reasons.append((player, reason))
+
+		# Ask active player to pull arm
+		arm = input("Player {} Decision: It's your turn. Based on this information, what arm do decide to play (type one of the following numbers): {}?  ".format(player, [i for i in range(n_arms)]))
 		while arm not in [str(i) for i in range(n_arms)]:
-			arm = input("Player {}: That's not one of the options. Which arm do you pull (type one of the following numbers): {}?  ".format(player, [i for i in range(n_arms)]))
-		reason = input("Player {}: Why did you pull that arm?  ".format(player))
+			arm = input("Player {} Decision: That's not one of the options. Which arm do you decide to play (type one of the following numbers): {}?  ".format(player, [i for i in range(n_arms)]))
 		reward = bandit.pull_arm(int(arm))
 		cumulative_reward += reward
-		print("You got this reward: {}. Your total reward: {}".format(int(reward * 100), int(cumulative_reward * 100)))
+		print("Your team got this reward: {}. Total reward: {}".format(int(reward * 100), int(cumulative_reward * 100)))
 		
 		# Update history
-		history["agent"].append(agent_arm)
-		history["human"].append(arm)
-		history["reasons"].append(reason)
-		history["rewards"].append(reward)
+		history["agent_decision"].append(agent_arm)
+		history["human_decision"].append(arm)
+		history["active_player"].append(players[0])
+		history["suggestions"].append(suggestions)
+		history["confidences"].append(confidences)
+		history["reasons"].append(reasons)
+		history["reward"].append(reward)
 	
 	history["cumulative_reward"] = cumulative_reward
 
@@ -88,12 +139,25 @@ def test_bandit():
 		agent_arm = np.argmax(thetas)
 		reward = bandit_resim.pull_arm(agent_arm)
 		agent_cumulative_reward += reward
+	history["agent_cumulative_reward"] = agent_cumulative_reward
 
 	print("That's it! Your joint total {} and how that compares to an agent alone {}".format(int(cumulative_reward * 100), int(agent_cumulative_reward * 100)))
+
+	# @Dorsa, if you want to view the parameters, uncomment this print statement 
+	# print("The distributions (mean, sd) of each arm were, from arm 0 to 2: {}".format(zip(bandit.mus, bandit.sigmas)))
 	
 	print("\n\nHistory: {}".format(history))
+	with open("pilot_data.csv", "w") as f:
+		w = csv.writer(f)
+		i = 1
+		for k, v in history.items():
+			if "cumulative_reward" not in k:
+				w.writerow([i] + [k] + v)
+			i += 1
+		w.writerow(["human_cumulative_reward", history["human_cumulative_reward"]])
+		w.writerow(["agent_cumulative_reward", history["agent_cumulative_reward"]])
 
-test_bandit()
+run_experiment()
 
 
 
