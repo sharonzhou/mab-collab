@@ -3,7 +3,7 @@ import random, math, os, time, csv
 
 """
 Bandit: creates an n-armed bandit with either random or specified normal distributions,
-		parameterized by mu, sigma
+		parameterized by the number of arms, and optionally mu, sigma
 """
 class Bandit:
 	def __init__(self, n_arms, mus=None, sigmas=None):
@@ -52,16 +52,20 @@ class Bandit:
 		return self.thetas
 
 def run_experiment(n_arms=3):
+	num_rounds = 10
+
 	# Codes for fixed parameters on practice and experiment rounds
 	codes = {
-		"practice": { "mus": [50, 30, 10], "sigmas": [10, 10, 30]},
-		"realdeal": { "mus": [40, 70, 50], "sigmas": [35, 25, 5]}
+		"practice": { "mus": [.5, .3, .1], "sigmas": [.1, .1, .3]},
+		"realdeal": { "mus": [.4, .7, .5], "sigmas": [.35, .25, .05]}
 	}
 
 	code = input("[Optional] Please enter valid code:  ")
 	if code in codes:
 		bandit = Bandit(n_arms, mus=codes[code]["mus"], sigmas=codes[code]["sigmas"])
 		print("Loading game with code {}...".format(code), end="\r")
+		if code == "practice":
+			num_rounds = 4
 	else:
 		bandit = Bandit(n_arms)
 		print("Loading game...", end="\r")
@@ -74,7 +78,6 @@ def run_experiment(n_arms=3):
 		ranges.append(m + num_sigmas * s)
 		ranges.append(m - num_sigmas * s)
 
-	num_rounds = 10
 	history = { 
 		"agent_decision": [], 
 		"human_decision": [], 
@@ -90,7 +93,7 @@ def run_experiment(n_arms=3):
 
 	# Instructions
 	print("There are {} arms to pull, each with a different distribution of rewards ($), most (95%) of which range from {} to {}. You want to maximize your rewards as a team. You will be prompted to take turns playing arms, but you will both reveal suggestions to your partner in all rounds. \n When asked for a reason for your choice in arms, here are a few examples you could use: \n\
-		 \"I chose this because it did well before\", \"it's the best\", \"haven't tried this one\", \"it was random\"".format(n_arms, min(ranges), max(ranges)))
+		 \"I chose this because it did well before\", \"it's the best\", \"haven't tried this one\", \"it was random\"".format(n_arms, int(min(ranges) * 100), int(max(ranges) * 100)))
 	ready = input("Ready to begin (y/[n])?  ")
 	while ready.lower() not in ["yes", "y"]:
 		ready = input("Ready to begin? ")
@@ -141,7 +144,7 @@ def run_experiment(n_arms=3):
 		history["reasons"].append(reasons)
 		history["reward"].append(reward)
 	
-	history["cumulative_reward"] = cumulative_reward
+	history["human_cumulative_reward"] = cumulative_reward
 
 	# Agent alone
 	bandit_resim = Bandit(n_arms, mus=bandit.mus, sigmas=bandit.sigmas)
