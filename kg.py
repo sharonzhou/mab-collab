@@ -15,9 +15,9 @@ class KnowledgeGradient:
 		self.failures = np.zeros(n_arms)
 
 		# from eval (pg 5) of paper
-		self.gamma = .81 
 		self.prior_alpha = 2
 		self.prior_beta = 2
+		self.gamma = np.random(self.prior_alpha, self.prior_beta) 
 		self.thetas = np.array([np.random.beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
 		self.q = np.array([np.random.beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
 
