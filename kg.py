@@ -1,5 +1,6 @@
 import numpy as np 
-import random, math, os, time, csv
+import random
+from beta import Beta
 
 """
 Knowledge Gradient: from forgetful Bayes and myopic planning
@@ -17,38 +18,38 @@ class KnowledgeGradient:
 		# from eval (pg 5) of paper
 		self.prior_alpha = 2
 		self.prior_beta = 2
-		self.gamma = np.random(self.prior_alpha, self.prior_beta) 
-		self.thetas = np.array([np.random.beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
-		self.q = np.array([np.random.beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
+		self.priors = np.array([Beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
+		self.gamma = Beta(self.prior_alpha, self.prior_beta).compute()
+		self.thetas = np.array([prior.compute() for prior in self.priors])
+		self.q = self.prior
+		# self.states = [[s] for s in self.q]
 
 	def observe_reward(self, k, reward):
 		self.t += 1
-
-		if reward:
-			self.successes[k] += 1
-		else:
-			self.failures[k] += 1
+		self.n_pulls += 1
+		self.successes[k] += reward
+		self.failures[k] += 1 - reward
 		
-		# calculate posteriors
-		self.thetas = np.random.beta(self.prior_alpha + self.successes, self.prior_beta + self.failures)
+		# Update estimated reward rate for arm k
+		self.thetas[k] = self.thetas[k] + (1. / self.n_pulls[k]) * (reward - self.thetas[k])
+		# Represent as Beta dist, from which to be generated iid
+		# self.thetas[k] = Beta(self.prior_alpha + self.successes[k], self.prior_beta + self.failures[k])
 
-		# update belief state
-		p_reward_given_theta = self.thetas**self.successes * (1-self.thetas)**self.failures
-		p_prior = gamma * self.q + (1-gamma) * self.prior
-		self.q = p_reward_given_theta * p_prior # TOASK: ~???
+		# Update posteriors
+		# pr_observation = self.thetas**self.successes * (1-self.thetas)**self.failures
+		pr_observation = Beta(self.successes + 1, self.failures + 1)
+		pr_prior = gamma * self.q + (1 - gamma) * self.priors
+		self.q = pr_observation * pr_prior
 		self.q /= np.sum(self.q)
 		return 
 
 	def choose_arm(self):
-		gradients = self.q * (self.successes / self.t) - self.thetas
+		n = self.successes + self.failures
+		p = np.true_divide(self.successes, n)
+		variance = n * p * (1 - p)
+		gradients = p + variance - np.amax(self.thetas)
 		decisions = self.thetas + (self.T - self.t - 1) * gradients 
 		return np.argmax(decisions)
-
-		# TOASK: Or are we taking JUST the max (asymmetric w/ maxes of q vs. thetas?)
-		gradient = np.amax(self.q) - np.amax(self.thetas)
-		decision = np.argmax(self.thetas) + (self.T - self.t - 1) * gradient
-		return decision
-
 
 
 
