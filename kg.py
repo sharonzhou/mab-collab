@@ -11,72 +11,52 @@ class KnowledgeGradient:
 		self.T = T
 		self.t = 1
 		self.n_arms = n_arms
-		self.n_pulls = np.zeros(n_arms)
 		self.successes = np.zeros(n_arms)
 		self.failures = np.zeros(n_arms)
 
 		# from eval (pg 5) of paper
 		self.prior_alpha = 2
 		self.prior_beta = 2
-		self.priors = np.array([approx_beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
-		self.gamma = approx_beta(self.prior_alpha, self.prior_beta)
+		self.priors = np.array([self._beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
+		self.gamma = self._beta(self.prior_alpha, self.prior_beta)
 		self.thetas = self.priors
 		self.q = None
+	
+	# Estimates updated reward rates + posterior probability distributions, after arm k is pulled with reward r
+	def _estimate(q, successes, failures, k, r, priors, gamma):
+		successes[k] += r
+		failures[k] += 1 - r
+		thetas[k] = thetas[k] + (1. / (successes[k] + failures[k])) * (r - thetas[k])
 
-	def approx_beta(self, alpha, beta):
-		n = 1000000000.
-		p = float(alpha) / float(alpha + beta)
-		return np.random.binomial(n, p) / n
+		pr_observation = self._beta(successes + 1, failures + 1)
+		pr_prior = gamma * q + (1. - gamma) * priors
+		q = pr_observation * pr_prior
+		q /= np.sum(q)
+
+		return thetas, np.array(q)
+
+	def _beta(self, alpha, beta):
+		return float(alpha) / float(alpha + beta)
 
 	def observe_reward(self, k, reward):
-		self.t += 1
-		self.n_pulls += 1
-		self.successes[k] += reward
-		self.failures[k] += 1 - reward
-		
-		# Update estimated reward rate for arm k
-		self.thetas[k] = self.thetas[k] + (1. / self.n_pulls[k]) * (reward - self.thetas[k])
-
-		# Update posterior probability distributions
-		pr_observation = approx_beta(self.successes + 1, self.failures + 1)
-		pr_prior = gamma * self.q + (1. - gamma) * self.priors
-		self.q = pr_observation * pr_prior
-		self.q /= np.sum(self.q)
+		self.t += 1		
+		self.thetas, self.q = self._estimate(self.q, self.successes, self.failures, k, reward, self.priors, self.gamma)
 		return 
 
 	def choose_arm(self):
-		# TODO: expectation over hypothetical t+1 (0 or 1) for each arm, how each affects all qs (or E(\theta_k^t))
-		pr_prior = gamma * self.q + (1. - gamma) * self.priors
+		expectations = np.zeros(n_arms)
+		for k in range(self.n_arms):
+			# Hypothetical success
+			thetas_success, q_success = self._estimate(self.q, self.successes, self.failures, k, 1, self.priors, self.gamma)
+			
+			# Hypothetical failure
+			thetas_failures, q_failures = self._estimate(self.q, self.successes, self.failures, k, 0, self.priors, self.gamma)
 
-		hypothetical_successes = self.successes + 1
-		hypothetical_q_successes = approx_beta(hypothetical_successes + 1, self.failures + 1) * pr_prior
+			# Expectation of success + failure
+			expectations[k] = q_successes * thetas_success + q_failure * thetas_failure 
 
-		hypothetical_failures = self.failures + 1
-		hypothetical_q_failures = approx_beta(self.successes + 1, hypothetical_failures + 1) * pr_prior
-		
-		# renormalize with other qs
-		hypothetical_qs_successes, hypothetical_qs_failures = [], []
-		for k, q in enumerate(hypothetical_q_successes):
-			qs = gamma * self.q + (1. - gamma) * self.priors
-			qs[k] = q
-			qs /= np.sum(qs)
-			hypothetical_qs_successes.append(qs)
-		for k, q in enumerate(hypothetical_q_failures):
-			qs = gamma * self.q + (1. - gamma) * self.priors
-			qs[k] = q
-			qs /= np.sum(qs)
-			hypothetical_qs_failures.append(qs)
-
-		# take mean of random var qs to get expectation TODO
-		for qs_successes in hypothetical_qs_successes:
-			for qs_failures in hypothetical_qs_failures:
-				expectation_t1 = (np.array(qs_successes) + np.array(qs_failures)) * self.thetas  
-		
-		# take max of these means over all arms
-		max_expectation_t1 = np.amax(expectation_t1)
-
-		gradient = max_expectation_t1 - np.amax(self.thetas)
-		decisions = self.thetas + (self.T - self.t - 1) * gradient
+		# take max over all arms (removed independent term in gradient)
+		decisions = self.thetas + (self.T - self.t - 1) * np.amax(expectations)
 		return np.argmax(decisions)
 
 
