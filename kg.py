@@ -20,10 +20,10 @@ class KnowledgeGradient:
 		self.priors = np.array([self._beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
 		self.gamma = self._beta(self.prior_alpha, self.prior_beta)
 		self.thetas = self.priors
-		self.q = None
+		self.q = self._beta(1, 1) * self.priors
 	
 	# Estimates updated reward rates + posterior probability distributions, after arm k is pulled with reward r
-	def _estimate(q, successes, failures, k, r, priors, gamma):
+	def _estimate(self, q, thetas, successes, failures, k, r, priors, gamma):
 		successes[k] += r
 		failures[k] += 1 - r
 		thetas[k] = thetas[k] + (1. / (successes[k] + failures[k])) * (r - thetas[k])
@@ -36,26 +36,30 @@ class KnowledgeGradient:
 		return thetas, np.array(q)
 
 	def _beta(self, alpha, beta):
-		return float(alpha) / float(alpha + beta)
+		return np.true_divide(alpha, alpha + beta)
 
-	def observe_reward(self, k, reward):
+	def observe_and_choose(self, k, reward):
 		self.t += 1		
-		self.thetas, self.q = self._estimate(self.q, self.successes, self.failures, k, reward, self.priors, self.gamma)
-		return 
 
-	def choose_arm(self):
-		expectations = np.zeros(n_arms)
+		# Observe reward
+		self.thetas, self.q = self._estimate(self.q, self.thetas, \
+			self.successes, self.failures, k, reward, self.priors, self.gamma)
+
+		# Choose next arm
+		expectations = np.zeros(self.n_arms)
 		for k in range(self.n_arms):
 			# Hypothetical success
-			thetas_success, q_success = self._estimate(self.q, self.successes, self.failures, k, 1, self.priors, self.gamma)
+			thetas_success, q_success = self._estimate(self.q, self.thetas, \
+				self.successes, self.failures, k, 1, self.priors, self.gamma)
 			
 			# Hypothetical failure
-			thetas_failures, q_failures = self._estimate(self.q, self.successes, self.failures, k, 0, self.priors, self.gamma)
+			thetas_failure, q_failure = self._estimate(self.q, self.thetas, \
+				self.successes, self.failures, k, 0, self.priors, self.gamma)
 
 			# Expectation of success + failure
-			expectations[k] = q_successes * thetas_success + q_failure * thetas_failure 
+			expectations[k] = np.sum(q_success * thetas_success + q_failure * thetas_failure)
 
-		# take max over all arms (removed independent term in gradient)
+		# Take max over all arms (removed independent term in gradient)
 		decisions = self.thetas + (self.T - self.t - 1) * np.amax(expectations)
 		return np.argmax(decisions)
 
