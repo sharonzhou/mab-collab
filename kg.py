@@ -37,7 +37,7 @@ class KnowledgeGradient:
 		# Update estimated reward rate for arm k
 		self.thetas[k] = self.thetas[k] + (1. / self.n_pulls[k]) * (reward - self.thetas[k])
 
-		# Update posteriors
+		# Update posterior probability distributions
 		pr_observation = approx_beta(self.successes + 1, self.failures + 1)
 		pr_prior = gamma * self.q + (1. - gamma) * self.priors
 		self.q = pr_observation * pr_prior
@@ -46,14 +46,37 @@ class KnowledgeGradient:
 
 	def choose_arm(self):
 		# TODO: expectation over hypothetical t+1 (0 or 1) for each arm, how each affects all qs (or E(\theta_k^t))
-		# take mean of random var qs w/ integral
+		pr_prior = gamma * self.q + (1. - gamma) * self.priors
+
+		hypothetical_successes = self.successes + 1
+		hypothetical_q_successes = approx_beta(hypothetical_successes + 1, self.failures + 1) * pr_prior
+
+		hypothetical_failures = self.failures + 1
+		hypothetical_q_failures = approx_beta(self.successes + 1, hypothetical_failures + 1) * pr_prior
+		
+		# renormalize with other qs
+		hypothetical_qs_successes, hypothetical_qs_failures = [], []
+		for k, q in enumerate(hypothetical_q_successes):
+			qs = gamma * self.q + (1. - gamma) * self.priors
+			qs[k] = q
+			qs /= np.sum(qs)
+			hypothetical_qs_successes.append(qs)
+		for k, q in enumerate(hypothetical_q_failures):
+			qs = gamma * self.q + (1. - gamma) * self.priors
+			qs[k] = q
+			qs /= np.sum(qs)
+			hypothetical_qs_failures.append(qs)
+
+		# take mean of random var qs to get expectation TODO
+		for qs_successes in hypothetical_qs_successes:
+			for qs_failures in hypothetical_qs_failures:
+				expectation_t1 = (np.array(qs_successes) + np.array(qs_failures)) * self.thetas  
+		
 		# take max of these means over all arms
-		# Q: can't you just take the theta with the highest E(theta^t)? as exploit
-		n = self.successes + self.failures
-		p = np.true_divide(self.successes, n)
-		variance = n * p * (1 - p)
-		gradients = p + variance - np.amax(self.thetas)
-		decisions = self.thetas + (self.T - self.t - 1) * gradients 
+		max_expectation_t1 = np.amax(expectation_t1)
+
+		gradient = max_expectation_t1 - np.amax(self.thetas)
+		decisions = self.thetas + (self.T - self.t - 1) * gradient
 		return np.argmax(decisions)
 
 
