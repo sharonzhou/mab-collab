@@ -64,7 +64,7 @@ class KnowledgeGradient:
 				k, 0, self.priors, self.gamma)
 
 			# Expectation of success + failure
-			expectations[k] = np.sum(q_success * original_expected_success, axis=1) + np.sum(q_failure * (1 - original_expected_success), axis=1)
+			expectations[k] = np.sum(q_success * original_expected_success) + np.sum(q_failure * (1 - original_expected_success))
 
 		# Take max over all arms (removed independent term in gradient)
 		decisions = np.sum(self.q, axis=1) + (self.T - self.t - 1) * np.amax(expectations)
