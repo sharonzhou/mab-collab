@@ -32,8 +32,9 @@ class KnowledgeGradient:
 		return pdf
 
 	# Estimates updated reward rates + posterior probability distributions, after arm k is pulled with reward r
-	def _estimate(self, q, thetas, k, r, priors, gamma):
+	def _estimate(self, q, th, k, r, priors, gamma):
 		# Reset thetas randomly
+		thetas = th[:]
 		for k in self.n_arms:
 			if random.random() < 1 - gamma:
 				thetas[k] = np.array([np.random.beta(self.prior_alpha, self.prior_beta)])
@@ -64,10 +65,12 @@ class KnowledgeGradient:
 				k, 0, self.priors, self.gamma)
 
 			# Expectation of success + failure
-			expectations[k] = np.sum(q_success * original_expected_success) + np.sum(q_failure * (1 - original_expected_success))
+			expectations[k] = np.max(q_success) * original_expected_success \
+								+ np.max(q_failure) * (1 - original_expected_success)
 
 		# Take max over all arms (removed independent term in gradient)
-		decisions = np.sum(self.q, axis=1) + (self.T - self.t - 1) * np.amax(expectations)
+		decisions = sum([q[k, i] * i / 100. for i in range(101)]) \
+					+ (self.T - self.t - 1) * expectations
 
 		# Observe reward
 		self.thetas, self.q = self._estimate(self.q, self.thetas, \
