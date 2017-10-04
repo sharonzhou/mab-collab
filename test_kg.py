@@ -17,4 +17,4 @@ for t in range(T):
 	print(k)
 	reward = 1 if random.random() < reward_rates[k] else 0
 	print("{}  Chose arm {}. Observed reward {}".format(t, k, reward))
-	k = kg_ins.observe_and_choose(k, reward)
+	k = kg_ins.choose_and_observe(k, reward)
