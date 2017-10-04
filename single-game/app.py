@@ -8,10 +8,8 @@ app = Flask(__name__)
 @app.route('/_choose_arm')
 def give_reward():
 	k = request.args.get('k', 0, type=int) - 1
-
-	# Sample from arm's distribution? Or have real reward rates
-	# reward = np.random.beta(alpha, beta)
 	r = 1 if random.random() < constants.reward_rates[k] else 0
+	# Record user's choice and reward to db
 	return jsonify(reward=r)
 
 @app.route('/')

@@ -1,0 +1,17 @@
+#score_wrapper {
+	font-weight: bold;
+	font-size: 18px;
+}
+
+#trial_wrapper, #game_wrapper {
+	padding-left: 50px;
+}
+
+body {
+	font-family: sans-serif;
+	margin-left: 50px;
+}
+
+button {
+	margin: 25px;
+}
