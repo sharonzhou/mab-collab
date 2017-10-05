@@ -1,0 +1,44 @@
+from app import app, db
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session
+from models import *
+import numpy as np
+import constant
+import random
+
+@app.route('/_choose_arm')
+def give_reward():
+	k = request.args.get('k', type=int) - 1
+	r = 1 if random.random() < constant.reward_rates[k] else 0
+	
+	# Record user's choice and reward to db
+	uid = request.args.get('uid', type=int)
+	game = request.args.get('game', type=int)
+	trial = request.args.get('trial', type=int)
+	move = Move(uid=uid, chosen_arm=k, trial=trial, game=game, reward=r)
+	db.session.add(move)
+	db.session.commit()
+	
+	return jsonify(reward=r)
+
+@app.route('/_create_user')
+def insert_user():
+	amt_id = request.args.get('amt_id')
+
+	# Create user in db
+	user = Worker(amt_id=amt_id)
+	db.session.add(user)
+	db.session.commit()
+	uid = Worker.query.order_by(Worker.id.desc()).first().id
+
+	return jsonify(uid=uid)
+
+@app.route('/play/<uid>')
+def play(uid):
+	return render_template('play.html', uid=uid)
+
+@app.route('/')
+def index():
+	return render_template('index.html')
+
+if __name__ == "__main__":
+	app.run(debug=True, host="127.0.0.1", port="5000")
