@@ -52,7 +52,7 @@ class KnowledgeGradient:
  								for k in range(self.n_arms)])
 
  		# Hypothetical expectations
-		expectations = np.array([np.zeros(self.n_arms) for _ in range(self.n_arms)])
+		expectations = np.zeros(self.n_arms)
 		for k in range(self.n_arms):
 			# Hypothetical success
 			thetas_success, q_success = self._estimate(self.q, self.thetas, \
@@ -67,14 +67,14 @@ class KnowledgeGradient:
 									for kk in range(self.n_arms)])
 			max_expected_failure = np.max([sum([q_failure[kk, i] * i / 100. for i in range(101)]) \
 									for kk in range(self.n_arms)])
-			expectations[k] = max_expected_success * original_expectation \
-								+ max_expected_failure * np.array(1 - original_expectation)
-		
+			expectations[k] = np.max(max_expected_success * original_expectation \
+								+ max_expected_failure * 1 - original_expectation)
+
 		# Take max over all arms (removed independent term in gradient)
 		decisions = np.array([sum([self.q[k, i] * i / 100. for i in range(101)]) \
 						for k in range(self.n_arms)]) + (self.T - self.t - 1) * expectations
 		
-		# Choosen next arm
+		# Choose next arm
 		chosen_arm = np.argmax(decisions)
 
 		# Observe reward
