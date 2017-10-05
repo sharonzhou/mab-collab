@@ -3,7 +3,7 @@ from flask import Flask, jsonify, render_template, request, redirect, url_for, s
 from models import *
 import numpy as np
 import constant
-import random
+import random, string
 
 @app.route('/_choose_arm')
 def give_reward():
@@ -18,7 +18,7 @@ def give_reward():
 	db.session.add(move)
 	db.session.commit()
 	
-	return jsonify(reward=r)
+	return jsonify(reward=r, uid=uid)
 
 @app.route('/_create_user')
 def insert_user():
@@ -31,6 +31,12 @@ def insert_user():
 	uid = Worker.query.order_by(Worker.id.desc()).first().id
 
 	return jsonify(uid=uid)
+
+@app.route('/_completion_code')
+def make_completion_code():
+	uid = request.args.get('uid')
+	code = ''.join(random.sample(string.ascii_letters + string.digits, 3)) + str(uid) + ''.join(random.sample(string.ascii_letters + string.digits, 3)) 	
+	return jsonify(code=code)
 
 @app.route('/play/<uid>')
 def play(uid):
