@@ -46,14 +46,15 @@ class KnowledgeGradient:
 		q = (q.T / np.sum(q, axis=1)).T
 		return thetas, q
 
-	def choose_and_observe(self, k, reward): 		
-		# Original expected reward
- 		original_expectation = np.array([sum([self.q[k, i] * i / 100. for i in range(101)]) \
- 								for k in range(self.n_arms)])
+	def choose_and_observe(self, reward): 
 
  		# Hypothetical expectations
 		expectations = np.zeros(self.n_arms)
 		for k in range(self.n_arms):
+			# Original expected reward
+ 			original_expectation = np.array([sum([self.q[k, i] * i / 100. for i in range(101)]) \
+ 									for k in range(self.n_arms)])
+
 			# Hypothetical success
 			thetas_success, q_success = self._estimate(self.q, self.thetas, \
 				k, 1, self.priors, self.gamma)
@@ -68,7 +69,7 @@ class KnowledgeGradient:
 			max_expected_failure = np.max([sum([q_failure[kk, i] * i / 100. for i in range(101)]) \
 									for kk in range(self.n_arms)])
 			expectations[k] = np.max(max_expected_success * original_expectation \
-								+ max_expected_failure * 1 - original_expectation)
+								+ max_expected_failure * (1 - original_expectation))
 
 		# Take max over all arms (removed independent term in gradient)
 		decisions = np.array([sum([self.q[k, i] * i / 100. for i in range(101)]) \
