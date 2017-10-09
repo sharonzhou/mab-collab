@@ -1,14 +1,14 @@
-from app import app, db
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session
+from app import app, db
 from app.models import *
+from app.constant import *
 import numpy as np
-import constant
 import random, string
 
 @app.route('/_choose_arm')
 def give_reward():
 	k = request.args.get('k', type=int) - 1
-	r = 1 if random.random() < constant.reward_rates[k] else 0
+	r = 1 if random.random() < reward_rates[k] else 0
 	
 	# Record user's choice and reward to db
 	uid = request.args.get('uid', type=int)
