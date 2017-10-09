@@ -1,6 +1,6 @@
 from app import app, db
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session
-from models import *
+from app.models import *
 import numpy as np
 import constant
 import random, string
