@@ -8,6 +8,9 @@ $(function() {
 			game: game,
 			trial: trial
 		}, function(data) {
+			if ($("#gameover").length != 0) {
+				return;
+			}
 			var reward = data.reward;
 			$('#reward').text(reward);
 			if (reward == 1) {
