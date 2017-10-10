@@ -21,7 +21,6 @@ class KnowledgeGradient:
 		
 		# NB: gamma taken empirically from paper
 		self.gamma = .81 
-		self.thetas = np.array([np.random.beta(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
 		self.q = np.array([self._discretize_beta_pdf(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
 	
 	# Discretizes Beta dist into its pdf with support [0,1], normalized to integrate to 1
@@ -31,23 +30,21 @@ class KnowledgeGradient:
 		pdf /= np.sum(pdf)
 		return pdf
 
-	# Estimates updated reward rates + posterior probability distributions, after arm k is pulled with reward r
-	def _estimate(self, q, th, k, r, priors, gamma):
-		# Reset thetas randomly
-		thetas = th[:]
-		for k in range(self.n_arms):
-			if random.random() < 1 - gamma:
-				thetas[k] = np.array([np.random.beta(self.prior_alpha, self.prior_beta)])
-
+	def _estimate(self, q_original, k, r):
+		q = np.copy(q_original)
 		pr_observation = np.ones((self.n_arms, 101))
 		pr_observation[k] = [i / 100. if r else 1 - i / 100. for i in range(101)]
-		pr_prior = gamma * q + (1. - gamma) * priors
+		pr_prior = self.gamma * q + (1. - self.gamma) * self.priors
 		q = pr_observation * pr_prior
 		q = (q.T / np.sum(q, axis=1)).T
-		return thetas, q
+		return q
 
-	def choose_and_observe(self, reward): 
+	# Observe reward r on arm k, and update internal state
+	def observe(self, k, r):
+		self.q = self._estimate(self.q, k, r)
+		self.t += 1
 
+	def choose(self): 
  		# Hypothetical expectations
 		expectations = np.zeros(self.n_arms)
 		for k in range(self.n_arms):
@@ -56,12 +53,10 @@ class KnowledgeGradient:
  									for k in range(self.n_arms)])
 
 			# Hypothetical success
-			thetas_success, q_success = self._estimate(self.q, self.thetas, \
-				k, 1, self.priors, self.gamma)
+			q_success = self._estimate(self.q, k, 1)
 			
 			# Hypothetical failure
-			thetas_failure, q_failure = self._estimate(self.q, self.thetas, \
-				k, 0, self.priors, self.gamma)
+			q_failure = self._estimate(self.q, k, 0)
 
 			# Expectation of success + failure
 			max_expected_success = np.max([sum([q_success[kk, i] * i / 100. for i in range(101)]) \
@@ -76,15 +71,5 @@ class KnowledgeGradient:
 						for k in range(self.n_arms)]) + (self.T - self.t - 1) * expectations
 		
 		# Choose next arm
-		chosen_arm = np.argmax(decisions)
-
-		# Observe reward
-		self.thetas, self.q = self._estimate(self.q, self.thetas, \
-			chosen_arm, reward, self.priors, self.gamma)
-
-		# Increment timestep
-		self.t += 1
-
-		return chosen_arm
-
+		return np.argmax(decisions)
 
