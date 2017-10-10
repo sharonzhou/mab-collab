@@ -20,8 +20,10 @@ $(function() {
 					$.getJSON($SCRIPT_ROOT + '/_completion_code', {
 						uid: data.uid
 					}, function(data_hidden) {
-						code = data_hidden.code
-						$('body').append('<div><span id="gameover">Gameover!</span> Completion code: ' + code + '</div>');
+						if ($("#gameover").length == 0) {
+							code = data_hidden.code
+							$('body').append('<div><span id="gameover">Gameover!</span> Completion code: ' + code + '</div>');
+						}
 				});
 				} else { 
 					$('#game').text(nextGame);
