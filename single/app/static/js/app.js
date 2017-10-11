@@ -1,4 +1,14 @@
 $(function() {
+	var table = '<table><tr>';
+	for (var i=0; i<20; i++) {
+		table += '<th>' + String(i + 1) + '</th>';
+	}
+	table += '</tr><tr>';
+	for (var i=0; i<20; i++) {
+		table += '<td id="td-game-' + String(i + 1) + '">-</td>';
+	}
+	table += '</tr></table>';
+	$('#table').append(table);
 	var choose_arm = function(id, uid) {
 		var game = parseInt($('#game').html());
 		var trial = parseInt($('#trial').html());
@@ -8,17 +18,31 @@ $(function() {
 			game: game,
 			trial: trial
 		}, function(data) {
-			if ($("#gameover").length != 0) {
+			if ($("#gameover").length != 0 || $('#nextbutton').length != 0) {
 				return;
 			}
+
 			var reward = data.reward;
 			$('#reward').text(reward);
 			if (reward == 1) {
-				$('#score').text(parseInt($('#score').html()) + 1)
+				$('#reward').css('color', 'green');
+				$('#score').text(parseInt($('#score').html()) + 1);
+				$('#reward').fadeOut(50);
+				$('#score').fadeOut(50);
+				$('#reward').fadeIn(25);
+				$('#score').fadeIn(25);
+			} else {
+				$('#reward').css('color', 'red');				
+				$('#reward').fadeOut(50);
+				$('#reward').fadeIn(25);
 			}
+
 			var nextTrial = parseInt($('#trial').html()) + 1;
 			if (nextTrial > 15) {
-				var nextGame = parseInt($('#game').html()) + 1;
+				score = $('#score').html();
+				game = $('#game').html();
+				$('#td-game-' + game).text(score);
+				var nextGame = parseInt(game) + 1;
 				if (nextGame > 20) {
 					$.getJSON($SCRIPT_ROOT + '/_completion_code', {
 						uid: data.uid
@@ -29,9 +53,7 @@ $(function() {
 						}
 				});
 				} else { 
-					$('#game').text(nextGame);
-					$('#trial').text('1');
-					$('#score').text('0');
+					$('#nextbutton_wrapper').append('<button id="nextbutton">Go to next game</button>');
 				}
 			} else {
 				$('#trial').text(nextTrial);
@@ -51,4 +73,17 @@ $(function() {
 		});
 	};
 	$('#start').click(function(){ start_game($('#amt_id').val()) })
+
+	var next_game = function() {
+		$('#nextbutton_wrapper').html('')
+		$('#score').text('0');
+		$('#reward').text('0 or 1');
+		$('#reward').css('color', 'black');
+		var nextGame = parseInt($('#game').html()) + 1;
+		$('#game').text(nextGame);
+		$('#trial').text('1');
+	}
+	$('#nextbutton_wrapper').on('click', '#nextbutton', function(){
+    	next_game();
+	});
 });

@@ -8,11 +8,11 @@ import random, string
 @app.route('/_choose_arm')
 def give_reward():
 	k = request.args.get('k', type=int) - 1
-	r = 1 if random.random() < reward_rates[k] else 0
+	game = request.args.get('game', type=int)
+	r = 1 if random.random() < reward_rates[game - 1][k] else 0
 	
 	# Record user's choice and reward to db
 	uid = request.args.get('uid', type=int)
-	game = request.args.get('game', type=int)
 	trial = request.args.get('trial', type=int)
 	move = Move(uid=uid, chosen_arm=k, trial=trial, game=game, reward=r)
 	db.session.add(move)
