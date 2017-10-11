@@ -25,14 +25,14 @@ $(function() {
 			var reward = data.reward;
 			$('#reward').text(reward);
 			if (reward == 1) {
-				$('#reward').css('color', 'green');
+				$('#reward').css('color', '#2c7bb6');
 				$('#score').text(parseInt($('#score').html()) + 1);
 				$('#reward').fadeOut(50);
 				$('#score').fadeOut(50);
 				$('#reward').fadeIn(25);
 				$('#score').fadeIn(25);
 			} else {
-				$('#reward').css('color', 'red');				
+				$('#reward').css('color', '#d7191c');				
 				$('#reward').fadeOut(50);
 				$('#reward').fadeIn(25);
 			}
