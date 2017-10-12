@@ -52,8 +52,10 @@ function drawGame() {
 		var zeroPointCount = charts_data[k].getValue(1, 1);
 		if (row == 0) {
 			charts_data[k].setValue(row, 1, onePointCount + 1);
+			onePointCount += 1;
 		} else {
 			charts_data[k].setValue(row, 1, zeroPointCount + 1);
+			zeroPointCount += 1;
 		}
 		ratio = (onePointCount / parseFloat(onePointCount + zeroPointCount)).toFixed(2)
 	  	options = $.extend({}, charts_options);
