@@ -1,15 +1,8 @@
 google.charts.load("current", {packages:['corechart']});
 google.charts.setOnLoadCallback(drawGame);
 function drawGame() {
-  var charts = [];
-  for (i=0; i<4; i++) {
-    var data = google.visualization.arrayToDataTable([
-      ["1 or 0 Points", "Number of times", { role: "style" } ],
-      ["Gave 1 point", 0, "color: #2c7bb6"],
-      ["Gave 0 points", 0, "color: #d7191c"]
-    ]);
-
-    var options = {
+  var charts_data = [];
+  var charts_options = {
       title: "Ratio: —",
       titleTextStyle: { fontSize: 14 },
       width: 150,
@@ -18,9 +11,23 @@ function drawGame() {
       legend: { position: "none" },
       vAxis: { viewWindow: { min: 0, max: 15 } }
     };
+  for (i=0; i<4; i++) {
+    // var data = google.visualization.arrayToDataTable([
+    //   ["1 or 0 Points", "Number of times", { role: "style" } ],
+    //   ["Gave 1 point", 0, "color: #2c7bb6"],
+    //   ["Gave 0 points", 0, "color: #d7191c"]
+    // ]);
+
+    var data = new google.visualization.DataTable();
+    data.addColumn("string", "1 or 0 Points");
+    data.addColumn("number", "Number of times");
+    data.addColumn({ type: "string", role: "style" });
+    data.addRow(["Gave 1 point", 0, "color: #2c7bb6"]);
+    data.addRow(["Gave 0 points", 0, "color: #d7191c"]);
+
+    charts_data.push(data);
     var chart = new google.visualization.ColumnChart(document.getElementById("chart_" + String(i + 1)));
-    charts.push(chart);
-    chart.draw(data, options);
+    chart.draw(data, charts_options);
   }
 
   var table = '<table id="history"><tr>';
@@ -33,6 +40,26 @@ function drawGame() {
   }
   table += '</tr></table>';
   $('#table').append(table);
+
+  var update_chart = function(k, row) {
+	var onePointCount = charts_data[k].getValue(0, 1);
+	var zeroPointCount = charts_data[k].getValue(1, 1);
+	if (row == 0) {
+		onePointCount += 1;
+		currCount = onePointCount;
+	} else {
+		zeroPointCount += 1;
+		currCount = zeroPointCount;
+	}
+  	charts_data[k].setValue(row, 1, currCount + 1);
+
+	ratio = (onePointCount / parseFloat(onePointCount + zeroPointCount)).toFixed(2)
+  	options = $.extend({}, charts_options);
+  	options["title"] = "Ratio: " + ratio
+
+	var chart = new google.visualization.ColumnChart(document.getElementById("chart_" + String(k + 1)));
+	chart.draw(charts_data[k], options);
+  };
 
   var choose_arm = function(id, uid) {
     var game = parseInt($('#game').html());
@@ -48,8 +75,10 @@ function drawGame() {
       }
 
       var reward = data.reward;
+      var k = data.k;
       $('#reward').text(reward);
       if (reward == 1) {
+    	update_chart(k, 0);
         $('#reward').css('color', '#2c7bb6');
         $('#score').text(parseInt($('#score').html()) + 1);
         $('#reward').fadeOut(50);
@@ -57,6 +86,7 @@ function drawGame() {
         $('#reward').fadeIn(25);
         $('#score').fadeIn(25);
       } else {
+    	update_chart(k, 1);
         $('#reward').css('color', '#d7191c');       
         $('#reward').fadeOut(50);
         $('#reward').fadeIn(25);
@@ -79,6 +109,8 @@ function drawGame() {
         });
         } else { 
           $('#nextbutton_wrapper').append('<button id="nextbutton">Go to next game</button>');
+          $('#nextbutton').fadeOut(50);
+          $('#nextbutton').fadeIn(25);          
         }
       } else {
         $('#trial').text(nextTrial);
@@ -107,6 +139,12 @@ function drawGame() {
     var nextGame = parseInt($('#game').html()) + 1;
     $('#game').text(nextGame);
     $('#trial').text('1');
+    for (k=0; k<4; k++) {
+      	charts_data[k].setValue(0, 1, 0);
+      	charts_data[k].setValue(1, 1, 0);
+    	var chart = new google.visualization.ColumnChart(document.getElementById("chart_" + String(k + 1)));
+    	chart.draw(charts_data[k], charts_options);
+    }
   }
   $('#nextbutton_wrapper').on('click', '#nextbutton', function(){
       next_game();

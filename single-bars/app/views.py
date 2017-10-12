@@ -18,7 +18,7 @@ def give_reward():
 	db.session.add(move)
 	db.session.commit()
 	
-	return jsonify(reward=r, uid=uid)
+	return jsonify(reward=r, uid=uid, k=k)
 
 @app.route('/_create_user')
 def insert_user():
