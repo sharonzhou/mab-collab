@@ -7,8 +7,7 @@
 	<script async>window.jQuery || document.write('<script src="{{ url_for('static', filename='js/jquery.js') }}">\x3C/script>')</script>
 	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
-	<script async type=text/javascript src="{{
-	  url_for('static', filename='js/app.js') }}"></script>
+	<script async type=text/javascript src="{{ url_for('static', filename='js/app.js') }}"></script>
 
 	<script async type="text/javascript">
 	  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
