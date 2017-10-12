@@ -51,14 +51,10 @@ function drawGame() {
 		var onePointCount = charts_data[k].getValue(0, 1);
 		var zeroPointCount = charts_data[k].getValue(1, 1);
 		if (row == 0) {
-			onePointCount += 1;
-			currCount = onePointCount;
+			charts_data[k].setValue(row, 1, onePointCount + 1);
 		} else {
-			zeroPointCount += 1;
-			currCount = zeroPointCount;
+			charts_data[k].setValue(row, 1, zeroPointCount + 1);
 		}
-	  	charts_data[k].setValue(row, 1, currCount + 1);
-
 		ratio = (onePointCount / parseFloat(onePointCount + zeroPointCount)).toFixed(2)
 	  	options = $.extend({}, charts_options);
 	  	options["title"] = "Ratio: " + ratio
