@@ -45,12 +45,12 @@ class KnowledgeGradient:
 		self.t += 1
 
 	def choose(self): 
- 		# Hypothetical expectations
+		# Hypothetical expectations
 		expectations = np.zeros(self.n_arms)
 		for k in range(self.n_arms):
 			# Original expected reward
- 			original_expectation = np.array([sum([self.q[k, i] * i / 100. for i in range(101)]) \
- 									for k in range(self.n_arms)])
+			original_expectation = np.array([sum([self.q[k, i] * i / 100. for i in range(101)]) \
+									for k in range(self.n_arms)])
 
 			# Hypothetical success
 			q_success = self._estimate(self.q, k, 1)

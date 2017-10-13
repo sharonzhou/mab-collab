@@ -37,22 +37,28 @@ aggregate = np.zeros((num_games, num_trials, num_arms, num_rewards))
 history = []
 for m in moves:
 	uid = m[1]
+	if uid not in valid_worker_ids:
+		continue
 	k = m[2]
 	trial = m[3] - 1
 	game = m[4] - 1
 	r = m[5]
 
-	# Remove duplicates - meaning uid, trial, game are all same - keep first one	
+	# Remove duplicates	
 	h = [uid, trial, game]
 	if history and h in history:
-		print("repeated uid game trial: ", uid, game, trial)
 		continue
 	history.append(h)
 
 	# Counter
 	aggregate[game][trial][k][r] += 1
 
-print(aggregate[-1][-1])
+# Get probabilities of choosing each arm at every trial, per game
+probabilities = np.zeros((num_games, num_trials, num_arms))
+for i in range(num_games):
+	for j in range(num_trials):
+		probabilities[i,j] = np.sum(aggregate[i][j], axis=1) / np.sum(aggregate[i][j])
+print(probabilities[19][14])
 
 
 
