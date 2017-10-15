@@ -31,7 +31,6 @@ function drawGame() {
 	    data.addRow(["Gave 0 points", 0, "color: #d7191c"]);
 
 	    charts_data.push(data);
-	    console.log();
 	    var chart = new google.visualization.ColumnChart(document.getElementById("chart_" + String(i + 1)));
 	    chart.draw(data, charts_options);
 	  }

@@ -77,9 +77,6 @@ with open("model_agreement.csv", "w+") as f:
 	for u in range(num_workers):
 		for g in range(num_games):
 			writer.writerow(np.insert(agreement[u, g], 0, u, axis=0))
-	# writer.writerows(agreement)
-
-
 
 """
 # Aggregate data across workers by game, trial, arm chosen, reward received

@@ -1,6 +1,5 @@
 import numpy as np 
 import random
-from beta import Beta, Mul
 
 """
 Knowledge Gradient: from forgetful Bayes and myopic planning
