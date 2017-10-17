@@ -10,7 +10,8 @@
 {% block body %}
 <body>
 	<h1>Dashboard</h1>
-	<h2>Human Actions</h2>
+
+	<h2>KG Model Agreement Percentage in Single Interface</h2>
 	<table>
 		<tr>
 			<th>User #</th>
@@ -30,13 +31,44 @@
 			<th>Trial 14</th>
 			<th>Trial 15</th>
 		</tr>
-	{% for action in single_human_actions %}
+		{% for game in single_user_avg_kg_agreement %}
 		<tr>
-			<td>User {{ loop.index }}</td>
-			{% for game in action %}
-				<td>{{ game }}</td>
+			<td><a href="{{ '/human_actions/single/%s'%loop.index0 }}">User {{ loop.index0 }}</a></td>
+			{% for trial in game %}
+				<td>{{ trial | round(2) }}</td>
 			{% endfor %}
 		</tr>
-	{% endfor %}
+		{% endfor %}
+	</table>
+
+	<h2>KG Model Agreement Percentage in Single Bars Interface</h2>
+	<table>
+		<tr>
+			<th>User #</th>
+			<th>Trial 1</th>
+			<th>Trial 2</th>
+			<th>Trial 3</th>
+			<th>Trial 4</th>
+			<th>Trial 5</th>
+			<th>Trial 6</th>
+			<th>Trial 7</th>
+			<th>Trial 8</th>
+			<th>Trial 9</th>
+			<th>Trial 10</th>
+			<th>Trial 11</th>
+			<th>Trial 12</th>
+			<th>Trial 13</th>
+			<th>Trial 14</th>
+			<th>Trial 15</th>
+		</tr>
+		{% for game in single_bars_user_avg_kg_agreement %}
+		<tr>
+			<td><a href="{{ '/human_actions/single_bars/%s'%loop.index0 }}">User {{ loop.index0 }}</a></td>
+			{% for trial in game %}
+				<td>{{ trial | round(2) }}</td>
+			{% endfor %}
+		</tr>
+		{% endfor %}
+	</table>
 </body>
 {% endblock %}

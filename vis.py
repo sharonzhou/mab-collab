@@ -61,6 +61,10 @@ def main():
 		human_actions = analysis.human_actions
 		rewards = analysis.rewards
 		kg_agreement = analysis.kg_agreement
+		kg_actions = analysis.kg_actions
+
+		# Average KG agreement for a user.
+		user_avg_kg_agreement = np.true_divide(np.sum(kg_agreement, axis=1), 20)
 
 		# Average per trial. Shape: (game, trial)
 		avg_kg_agreement = np.true_divide(np.sum(kg_agreement.swapaxes(0,1).swapaxes(1,2), axis=2), kg_agreement.size)
@@ -68,7 +72,9 @@ def main():
 		data[interface + "_human_actions"] = human_actions.tolist()
 		data[interface + "_rewards"] = rewards.tolist()
 		data[interface + "_kg_agreement"] = kg_agreement.tolist()
+		data[interface + "_kg_actions"] = kg_actions.tolist()
 		data[interface + "_avg_kg_agreement"] = avg_kg_agreement.tolist()
+		data[interface + "_user_avg_kg_agreement"] = user_avg_kg_agreement.tolist()
 	return render_template("vis.html", **data)
 
 
