@@ -17,13 +17,16 @@ def get_interface_analysis_instance(db):
 	return Analysis(url)
 
 @app.route("/human_actions/<db>/<uid>")
-def human_actions(db, uid):
+@app.route("/human_actions/<db>/<uid>/<model>")
+def human_actions(db, uid, model="kg"):
 	analysis = get_interface_analysis_instance(db)
 
 	human_actions = analysis.human_actions
 	rewards = analysis.rewards
-	kg_agreement = analysis.kg_agreement
-	kg_actions = analysis.kg_actions
+
+	kg_actions, kg_agreement = analysis.compute_kg()
+	greedy_actions, greedy_agreement = analysis.compute_greedy()
+	wsls_actions, wsls_agreement = analysis.compute_wsls()
 
 	# Rows for user's actions
 	actions = human_actions[int(uid)]
@@ -34,17 +37,33 @@ def human_actions(db, uid):
 			style = "fill-color: red"
 			if rewards[int(uid)][g][t]:
 				style = "fill-color: green"
-			annotation = "KG: {}".format(str(int(kg_actions[int(uid)][g][t] + 1)))
-			if kg_agreement[int(uid)][g][t]:
+
+			if model == "greedy":
+				model_agreement = greedy_agreement
+				annotation = "eG: {}".format(str(int(greedy_actions[int(uid)][g][t] + 1)))
+			elif model == "wsls":
+				model_agreement = wsls_agreement
+				annotation = "WSLS: {}".format(str(int(wsls_actions[int(uid)][g][t] + 1)))
+			else:
+				model_agreement = kg_agreement
+				annotation = "KG: {}".format(str(int(kg_actions[int(uid)][g][t] + 1)))
+
+			tooltip = "KG: {}".format(str(int(kg_actions[int(uid)][g][t] + 1))) + \
+						"eG: {}".format(str(int(greedy_actions[int(uid)][g][t] + 1))) + \
+						"WSLS: {}".format(str(int(wsls_actions[int(uid)][g][t] + 1)))
+
+			if model_agreement[int(uid)][g][t]:
 				style += "; stroke-color: gray; stroke-width: 1; fill-opacity: 1"
 			else:
 				style += "; fill-opacity: .2"
-			rows[g][t] = ["Trial {}".format(str(t + 1)), actions[g][t] + 1, style, annotation]
+
+			rows[g][t] = ["Trial {}".format(str(t + 1)), actions[g][t] + 1, style, annotation, tooltip]
 	return render_template("human_actions.html", rows=json.dumps(rows), user=uid, interface=db)
 
 
 @app.route("/")
-def main():
+@app.route("/<model>")
+def main(model="kg"):
 	parse.uses_netloc.append("postgres")
 	urls = {
 		"single": parse.urlparse(os.environ["DATABASE_URL_SINGLE"]),
@@ -58,24 +77,17 @@ def main():
 		analysis = Analysis(url)
 
 		# Shapes: (uid, game, trial)
-		human_actions = analysis.human_actions
-		rewards = analysis.rewards
-		kg_agreement = analysis.kg_agreement
-		kg_actions = analysis.kg_actions
+		if model == "greedy":
+			_, model_agreement = analysis.compute_greedy()
+		elif model == "wsls":
+			_, model_agreement = analysis.compute_wsls()
+		else:
+			_, model_agreement = analysis.compute_kg()
 
-		# Average KG agreement for a user.
-		user_avg_kg_agreement = np.true_divide(np.sum(kg_agreement, axis=1), 20)
-
-		# Average per trial. Shape: (game, trial)
-		avg_kg_agreement = np.true_divide(np.sum(kg_agreement.swapaxes(0,1).swapaxes(1,2), axis=2), kg_agreement.size)
-
-		data[interface + "_human_actions"] = human_actions.tolist()
-		data[interface + "_rewards"] = rewards.tolist()
-		data[interface + "_kg_agreement"] = kg_agreement.tolist()
-		data[interface + "_kg_actions"] = kg_actions.tolist()
-		data[interface + "_avg_kg_agreement"] = avg_kg_agreement.tolist()
-		data[interface + "_user_avg_kg_agreement"] = user_avg_kg_agreement.tolist()
-	return render_template("vis.html", **data)
+		# Average agreement for a user.
+		user_avg_agreement = np.true_divide(np.sum(model_agreement, axis=1), 20)
+		data[interface + "_user_avg_agreement"] = user_avg_agreement.tolist()
+	return render_template("vis.html", **data, model=model)
 
 
 if __name__ == "__main__":

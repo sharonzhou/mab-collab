@@ -4,6 +4,8 @@ import psycopg2
 import psycopg2.extras
 import numpy as np
 from kg import KnowledgeGradient
+from greedy import Greedy
+from wsls import WSLS
 from constant import *
 
 class Analysis:
@@ -65,13 +67,55 @@ class Analysis:
 		# TODO: optimization / hyperparam tuning
 		self.kg_agreement = np.zeros((self.num_workers, self.num_games, self.num_trials))
 		self.kg_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
+
+		self.greedy_agreement = np.zeros((self.num_workers, self.num_games, self.num_trials))
+		self.greedy_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
+		self.e = .1
+
+		self.wsls_agreement = np.zeros((self.num_workers, self.num_games, self.num_trials))
+		self.wsls_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
+
+	def compute_kg(self):
 		for u in range(self.num_workers):
 			for g in range(self.num_games):
 				kg = KnowledgeGradient(self.num_arms, self.num_trials)
 				for t in range(self.num_trials):
 					k_human = int(self.human_actions[u, g, t])
-					k_robot = kg.choose()
-					self.kg_agreement[u, g, t] = k_human == k_robot
-					self.kg_actions[u, g, t] = k_robot
+
+					k_kg = kg.choose()
+					self.kg_agreement[u, g, t] = k_human == k_kg
+					self.kg_actions[u, g, t] = k_kg
+
 					r = self.rewards[u, g, t]
-					kg.observe(k, r)
+					kg.observe(k_human, r)
+		return self.kg_actions, self.kg_agreement
+
+	def compute_greedy(self):
+		for u in range(self.num_workers):
+			for g in range(self.num_games):
+				greedy = Greedy(self.num_arms, self.e)
+				for t in range(self.num_trials):
+					k_human = int(self.human_actions[u, g, t])
+
+					k_greedy = greedy.choose()
+					self.greedy_agreement[u, g, t] = k_human == k_greedy
+					self.greedy_actions[u, g, t] = k_greedy
+
+					r = self.rewards[u, g, t]
+					greedy.observe(k_human, r)
+		return self.greedy_actions, self.greedy_agreement
+	
+	def compute_wsls(self):
+		for u in range(self.num_workers):
+			for g in range(self.num_games):
+				wsls = WSLS(self.num_arms)
+				for t in range(self.num_trials):
+					k_human = int(self.human_actions[u, g, t])
+
+					k_wsls = wsls.choose()
+					self.wsls_agreement[u, g, t] = k_human == k_wsls
+					self.wsls_actions[u, g, t] = k_wsls
+
+					r = self.rewards[u, g, t]
+					wsls.observe(k_human, r)
+		return self.wsls_actions, self.wsls_agreement

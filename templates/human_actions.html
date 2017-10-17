@@ -33,6 +33,7 @@
 				data.addColumn("number", "Arm");
 				data.addColumn({ type: "string", role: "style" });
 				data.addColumn({ type: "string", role: "annotation" });
+				data.addColumn({ type: "string", role: 'tooltip', p: {"html": true}})
 				data.addRows(rows[g]);
 
 				var chart = new google.visualization.ColumnChart(document.getElementById("chart_" + String(g + 1)));
