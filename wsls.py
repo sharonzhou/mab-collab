@@ -9,8 +9,9 @@ class WSLS:
 		if r == 1:
 			self.next_arm = k
 		else:
-			while self.next_arm == k:
-				self.next_arm = random.choice(range(self.n_arms))
+			all_arms = [i for i in range(self.n_arms)]
+			all_arms.pop(k)
+			self.next_arm = random.choice(all_arms)
 
 	def choose(self): 
 		return self.next_arm
