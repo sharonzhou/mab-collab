@@ -48,9 +48,9 @@ def human_actions(db, uid, model="kg"):
 				model_agreement = kg_agreement
 				annotation = "KG: {}".format(str(int(kg_actions[int(uid)][g][t] + 1)))
 
-			tooltip = "KG: {}".format(str(int(kg_actions[int(uid)][g][t] + 1))) + \
-						"eG: {}".format(str(int(greedy_actions[int(uid)][g][t] + 1))) + \
-						"WSLS: {}".format(str(int(wsls_actions[int(uid)][g][t] + 1)))
+			tooltip = "KG: {}\n".format(str(int(kg_actions[int(uid)][g][t] + 1))) + \
+						" eG: {}\n".format(str(int(greedy_actions[int(uid)][g][t] + 1))) + \
+						" WSLS: {}".format(str(int(wsls_actions[int(uid)][g][t] + 1)))
 
 			if model_agreement[int(uid)][g][t]:
 				style += "; stroke-color: gray; stroke-width: 1; fill-opacity: 1"

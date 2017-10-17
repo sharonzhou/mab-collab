@@ -20,13 +20,22 @@ class Greedy:
 			thetas = [1. / self.n_arms for _ in range(self.n_arms)]
 		
 		argmaxes = [i for i, x in enumerate(thetas) if x == max(thetas)]
+		print("this is a max ", argmaxes)
 
 		if random.random() < self.e:
-			k = random.choice(range(self.n_arms))
-			while k in argmaxes:
+			print("returning a random one!")
+			all_arms = [i for i in range(self.n_arms)]
+			argmaxes.reverse()
+			valid_arms = [all_arms.pop(i) for i in argmaxes]
+			if not valid_arms:
 				k = random.choice(range(self.n_arms))
+			else:
+				k = random.choice(valid_arms)
+			print(k)
 			return k
 		else:
-			return random.choice(argmaxes)
+			k = random.choice(argmaxes)
+			print("not random ", k)
+			return k
 
 
