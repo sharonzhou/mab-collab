@@ -6,7 +6,7 @@ import numpy as np
 from kg import KnowledgeGradient
 from constant import *
 
-class Agreement:
+class Analysis:
 	def __init__(self, db_url):
 		self.db_url = db_url
 
@@ -36,8 +36,8 @@ class Agreement:
 		self.num_trials = 15
 		self.num_arms = 4
 		self.num_rewards = 2
-		self.arm_data = np.zeros((self.num_workers, self.num_games, self.num_trials))
-		self.reward_data = np.zeros((self.num_workers, self.num_games, self.num_trials))
+		self.human_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
+		self.rewards = np.zeros((self.num_workers, self.num_games, self.num_trials))
 
 		# Get valid moves
 		history = []
@@ -58,17 +58,20 @@ class Agreement:
 
 			# Counter
 			w = self.worker_id_mapping[u]
-			self.arm_data[w, g, t] = k
-			self.reward_data[w, g, t] = r
+			self.human_actions[w, g, t] = k
+			self.rewards[w, g, t] = r
 
 		# Compute per trial model agreement
-		self.agreement = np.zeros((self.num_workers, self.num_games, self.num_trials))
+		# TODO: optimization / hyperparam tuning
+		self.kg_agreement = np.zeros((self.num_workers, self.num_games, self.num_trials))
+		self.kg_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
 		for u in range(self.num_workers):
 			for g in range(self.num_games):
 				kg = KnowledgeGradient(self.num_arms, self.num_trials)
 				for t in range(self.num_trials):
-					k = int(self.arm_data[u, g, t])
-					q = sum(kg.q[k, i] * i / 100. for i in range(101))
-					self.agreement[u, g, t] = q
-					r = self.reward_data[u, g, t]
+					k_human = int(self.human_actions[u, g, t])
+					k_robot = kg.choose()
+					self.kg_agreement[u, g, t] = k_human == k_robot
+					self.kg_actions[u, g, t] = k_robot
+					r = self.rewards[u, g, t]
 					kg.observe(k, r)

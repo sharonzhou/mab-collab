@@ -1,0 +1,111 @@
+{% block head %}
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	<script type="text/javascript">
+	  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+	</script>
+	<script type="text/javascript">
+		google.charts.load("current", {packages:["corechart"]});
+		google.charts.setOnLoadCallback(function() { visualize(data)} );
+	</script>
+	<script type="text/javascript">
+		var single_human_actions = JSON.parse("{{ single_human_actions | tojson | safe}}");
+		var single_bars_human_actions = JSON.parse("{{ single_bars_human_actions | tojson | safe}}");
+		var single_kg_agreement = JSON.parse("{{ single_kg_agreement | tojson | safe}}");
+		var data = {
+			"human_actions": [single_human_actions, single_bars_human_actions], 
+			"kg_agreement": [single_kg_agreement, single_bars_kg_agreement]
+		}
+		function visualize(data) {
+			if ("human_actions" in data) {
+				for (i = 0; i < data["human_actions"].length; i++) {
+					var actions = data["human_actions"][i];
+
+					var data = new google.visualization.DataTable();
+					data.addColumn("number", "Trials");
+					data.addColumn("string", "User");
+
+					for (u = 0; u < actions.length; u++) {
+						for (g = 0; g < actions[u].length; g++) {
+							actions[u][g]						
+						}
+					}
+					for (g = 0; g < 20; g++) {
+						data.addColumn("number", "Game " + String(g + 1));
+					};
+
+					var rows = [];
+					for (t = 0; t < aggregate_agreement.length; t++) {
+						if (t == 0) {
+							rows[t] = [t, average_agreement[t]];
+						}
+						rows[t].push.apply(aggregate_agreement[t]);
+					}
+					data.addRows(rows);
+
+					charts_data.push(data);
+			  		var chart = new google.visualization.LineChart(document.getElementById("chart_" + String(i)));
+			  		chart_options = $.extend({}, charts_options);
+			  		chart_options["title"] = i == 0 ? "Agreement: Single-player" : "Agreement: Single-player with bars";
+			  		chart.draw(data, chart_options);
+			  	};
+			};
+
+
+			}
+			var charts_options = {
+			    title: "Agreement",
+			    bar: { groupWidth: "95%" },
+			    legend: { position: "right" },
+			   	vAxis: { viewWindow: { min: 0, max: 1 } }
+			};
+			// Holds chart data for single and single bars
+			var charts_data = [];
+			for (i = 0; i < agreement[0].length; i++) {
+				var average_agreement = agreement[i];
+
+				var data = new google.visualization.DataTable();
+				data.addColumn("number", "Trials");
+				for (g = 0; g < 20; g++) {
+					data.addColumn("number", "Game " + String(g + 1));
+				};
+
+				var rows = [];
+				for (t = 0; t < aggregate_agreement.length; t++) {
+					if (t == 0) {
+						rows[t] = [t, average_agreement[t]];
+					}
+					rows[t].push.apply(aggregate_agreement[t]);
+				}
+				data.addRows(rows);
+
+				charts_data.push(data);
+		  		var chart = new google.visualization.LineChart(document.getElementById("chart_" + String(i)));
+		  		chart_options = $.extend({}, charts_options);
+		  		chart_options["title"] = i == 0 ? "Agreement: Single-player" : "Agreement: Single-player with bars";
+		  		chart.draw(data, chart_options);
+		  	};
+		};
+
+	</script>
+</head>
+{% endblock %}
+
+{% block body %}
+<body>
+	<div>Dashboard</div>
+	<div id="chart_0"></div>
+	<div id="chart_1"></div>
+	<table>
+		<tr id="tr_0"></tr>
+		<tr id="tr_1"></tr>
+		<tr id="tr_2"></tr>
+		<tr id="tr_3"></tr>
+		<tr id="tr_4"></tr>
+		<tr id="tr_5"></tr>
+		<tr id="tr_6"></tr>
+		<tr id="tr_7"></tr>
+	</table>
+</body>
+{% endblock %}

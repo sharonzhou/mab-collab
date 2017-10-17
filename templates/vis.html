@@ -1,70 +1,42 @@
 {% block head %}
 <head>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 	<script type="text/javascript">
 	  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-	</script>
-	<script type="text/javascript">
-		google.charts.load("current", {packages:["corechart"]});
-		google.charts.setOnLoadCallback(function() { visualize(agreement)});
-	</script>
-	<script type="text/javascript">
-		var agreement = JSON.parse("{{ agreement | tojson | safe}}");
-		function visualize(agreement){
-			var charts_options = {
-			    title: "Agreement",
-			    bar: { groupWidth: "95%" },
-			    legend: { position: "none" },
-			   	vAxis: { viewWindow: { min: 0, max: 1 } }
-			};
-			// Holds chart data for each game (new chart per game)
-			var charts_data = [];
-			var num_tr = 0;
-			for (g = 0; g < 20; g++) {
-				if (g % 3 == 0) {
-					num_tr += 1;
-				}
-	  			$("#tr_" + String(num_tr)).append('<td id="chart_' + String(g + 1) + '"></td>');
-
-				var data = new google.visualization.DataTable();
-				data.addColumn("number", "Trials");
-
-				for (u = 0; u < agreement[g][0].length; u++) {
-					data.addColumn("number", "User " + String(u));
-				}
-
-				var game = agreement[g];
-				for (t = 0; t < game.length; t++) {
-					var row = [t + 1]
-					var json_trial = $.parseJSON('[' + game[t] + ']');
-					row.push.apply(row, json_trial);
-					data.addRow(row);
-				}
-				charts_data.push(data);
-		  		var chart = new google.visualization.LineChart(document.getElementById("chart_" + String(g + 1)));
-		  		chart_options = $.extend({}, charts_options);
-		  		chart_options["title"] = "Agreement for Game " + String(g + 1)
-		  		chart.draw(data, chart_options);
-			}
-		};
-
 	</script>
 </head>
 {% endblock %}
 
 {% block body %}
 <body>
-	<div>Dashboard</div>
+	<h1>Dashboard</h1>
+	<h2>Human Actions</h2>
 	<table>
-		<tr id="tr_0"></tr>
-		<tr id="tr_1"></tr>
-		<tr id="tr_2"></tr>
-		<tr id="tr_3"></tr>
-		<tr id="tr_4"></tr>
-		<tr id="tr_5"></tr>
-		<tr id="tr_6"></tr>
-		<tr id="tr_7"></tr>
-	</table>
+		<tr>
+			<th>User #</th>
+			<th>Trial 1</th>
+			<th>Trial 2</th>
+			<th>Trial 3</th>
+			<th>Trial 4</th>
+			<th>Trial 5</th>
+			<th>Trial 6</th>
+			<th>Trial 7</th>
+			<th>Trial 8</th>
+			<th>Trial 9</th>
+			<th>Trial 10</th>
+			<th>Trial 11</th>
+			<th>Trial 12</th>
+			<th>Trial 13</th>
+			<th>Trial 14</th>
+			<th>Trial 15</th>
+		</tr>
+	{% for action in single_human_actions %}
+		<tr>
+			<td>User {{ loop.index }}</td>
+			{% for game in action %}
+				<td>{{ game }}</td>
+			{% endfor %}
+		</tr>
+	{% endfor %}
 </body>
 {% endblock %}
