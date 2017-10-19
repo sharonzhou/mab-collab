@@ -1,4 +1,4 @@
-import os, random, csv
+import os, random, csv, itertools
 from urllib import parse
 import psycopg2
 import psycopg2.extras
@@ -76,33 +76,101 @@ class Analysis:
 		self.wsls_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
 
 	def compute_kg(self):
+		alphas = [.25, .5, .75, 1., 1.25, 1.5, 1.75, 2.]
+		betas = [.25, .5, .75, 1., 1.25, 1.5, 1.75, 2.]
+		gammas = [.1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]
+		best_params = [[] for _ in range(self.num_workers)]
+		history = [{} for _ in range(self.num_workers)]
+		# best_params[0] = [0.25, 2.0, 1.0]
 		for u in range(self.num_workers):
-			for g in range(self.num_games):
-				kg = KnowledgeGradient(self.num_arms, self.num_trials)
-				for t in range(self.num_trials):
-					k_human = int(self.human_actions[u, g, t])
+			if best_params[u]:
+				alpha, beta, gamma = best_params[u]
+				for g in range(self.num_games):
+					kg = KnowledgeGradient(self.num_arms, self.num_trials, \
+						alpha=alpha, beta=beta, gamma=gamma)
+					for t in range(self.num_trials):
+						k_human = int(self.human_actions[u, g, t])
 
-					k_kg = kg.choose()
-					self.kg_agreement[u, g, t] = k_human == k_kg
-					self.kg_actions[u, g, t] = k_kg
+						k_kg = kg.choose()
+						self.kg_agreement[u, g, t] = k_human == k_kg
+						self.kg_actions[u, g, t] = k_kg
 
-					r = self.rewards[u, g, t]
-					kg.observe(k_human, r)
+						r = self.rewards[u, g, t]
+						kg.observe(k_human, r)
+				print("Best param retrieved for user {} is {}".format(u, best_params[u]))
+				continue
+			best_aggregate_agreement = None
+			for alpha, beta, gamma in itertools.product(alphas, betas, gammas):
+				tmp_params = [alpha, beta, gamma]
+				tmp_agreement = np.zeros((self.num_games, self.num_trials))
+				tmp_actions = np.zeros((self.num_games, self.num_trials))
+				for g in range(self.num_games):
+					kg = KnowledgeGradient(self.num_arms, self.num_trials, \
+						alpha=alpha, beta=beta, gamma=gamma)
+					for t in range(self.num_trials):
+						k_human = int(self.human_actions[u, g, t])
+
+						k_kg = kg.choose()
+						tmp_agreement[g, t] = k_human == k_kg
+						tmp_actions[g, t] = k_kg
+
+						r = self.rewards[u, g, t]
+						kg.observe(k_human, r)
+				# Check best
+				aggregate_agreement = np.sum(tmp_agreement)
+				if aggregate_agreement not in history[u]:
+					history[u][aggregate_agreement] = []
+				history[u][aggregate_agreement].append(tmp_params)
+				print(u, "Found aggregate_agreement as: ", aggregate_agreement, " with params a b g as ", tmp_params)
+				if best_aggregate_agreement is None or aggregate_agreement > best_aggregate_agreement:
+					print(u, "Found new BEST aggregate_agreement: ", aggregate_agreement, " with params a b g as ", tmp_params)
+					best_aggregate_agreement = aggregate_agreement
+					best_params[u] = tmp_params
+					self.kg_agreement[u] = tmp_agreement
+					self.kg_actions[u] = tmp_actions
+			print("history so far ", history)
+			print("all best params for users so far: {}".format(best_params))
+			print("best params found for user {} is {}".format(u, best_params[u]))
+		print("final history of params ", history)
+		print("final best params for users ", best_params)
 		return self.kg_actions, self.kg_agreement
 
 	def compute_greedy(self):
+		epsilons = [.01, .025, .05, .1, .25, .5]
+		best_params = [None for _ in range(self.num_workers)]
+		history = [{} for _ in range(self.num_workers)]
 		for u in range(self.num_workers):
-			for g in range(self.num_games):
-				greedy = Greedy(self.num_arms, self.e)
-				for t in range(self.num_trials):
-					k_human = int(self.human_actions[u, g, t])
+			best_aggregate_agreement = None
+			for e in epsilons:
+				tmp_agreement = np.zeros((self.num_games, self.num_trials))
+				tmp_actions = np.zeros((self.num_games, self.num_trials))
+				for g in range(self.num_games):
+					greedy = Greedy(self.num_arms, e)
+					for t in range(self.num_trials):
+						k_human = int(self.human_actions[u, g, t])
 
-					k_greedy = greedy.choose()
-					self.greedy_agreement[u, g, t] = k_human == k_greedy
-					self.greedy_actions[u, g, t] = k_greedy
+						k_greedy = greedy.choose()
+						tmp_agreement[g, t] = k_human == k_greedy
+						tmp_actions[g, t] = k_greedy
 
-					r = self.rewards[u, g, t]
-					greedy.observe(k_human, r)
+						r = self.rewards[u, g, t]
+						greedy.observe(k_human, r)
+				aggregate_agreement = np.sum(tmp_agreement)
+				if aggregate_agreement not in history[u]:
+					history[u][aggregate_agreement] = []
+				history[u][aggregate_agreement].append(e)
+				print(u, "Found aggregate_agreement as (greedy): ", aggregate_agreement, " with e as ", e)
+				if best_aggregate_agreement is None or aggregate_agreement > best_aggregate_agreement:
+					print(u, "Found new BEST aggregate_agreement (greedy): ", aggregate_agreement, " with e as ", e)
+					best_aggregate_agreement = aggregate_agreement
+					best_params[u] = e
+					self.greedy_agreement[u] = tmp_agreement
+					self.greedy_actions[u] = tmp_actions
+			print("greedy: history so far ", history)
+			print("greedy: all best e for users so far: {}".format(best_params))
+			print("greedy: best e found for user {} is {}".format(u, best_params[u]))
+		print("greedy: final history of e ", history)
+		print("greedy: final best e for users ", best_params)				
 		return self.greedy_actions, self.greedy_agreement
 	
 	def compute_wsls(self):

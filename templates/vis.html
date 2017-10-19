@@ -12,6 +12,7 @@
 	<h1>Dashboard</h1>
 	<a href="/kg">KG</a> <a href="/greedy">Greedy</a> <a href="/wsls">WSLS</a>
 
+	<div>{{ single_avg_agreement }}</div>
 	<h2>{{ model|upper }} Model Agreement Percentage in Single Interface</h2>
 	<table>
 		<tr>
@@ -42,6 +43,7 @@
 		{% endfor %}
 	</table>
 
+	<div>{{ single_bars_avg_agreement }}</div>
 	<h2>{{ model|upper }} Model Agreement Percentage in Single Bars Interface</h2>
 	<table>
 		<tr>

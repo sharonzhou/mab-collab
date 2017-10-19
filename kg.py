@@ -6,7 +6,7 @@ Knowledge Gradient: from forgetful Bayes and myopic planning
 		parameterized by int: n_arms, the number of arms; int: T, finite time horizon
 """
 class KnowledgeGradient:
-	def __init__(self, n_arms, T):
+	def __init__(self, n_arms, T, alpha=.65, beta=1.05, gamma=.81):
 		self.T = T
 		self.t = 1
 		
@@ -14,18 +14,18 @@ class KnowledgeGradient:
 		self.successes = np.zeros(n_arms)
 		self.failures = np.zeros(n_arms)
 
-		self.prior_alpha = 2
-		self.prior_beta = 2
+		self.prior_alpha = alpha
+		self.prior_beta = beta
 		self.priors = np.array([self._discretize_beta_pdf(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
 		
 		# NB: gamma taken empirically from paper
-		self.gamma = .81 
+		self.gamma = gamma
 		self.q = np.array([self._discretize_beta_pdf(self.prior_alpha, self.prior_beta) for _ in range(n_arms)])
 	
 	# Discretizes Beta dist into its pdf with support [0,1], normalized to integrate to 1
 	def _discretize_beta_pdf(self, alpha, beta):
 		x = [i / 100. for i in range(101)]
-		pdf = [i**(alpha - 1.) * (1. - i)**(beta - 1.) for i in x]
+		pdf = [i**(alpha - 1.) * (1. - i)**(beta - 1.) if i != 0 and 1. - i != 0 else 0. for i in x]
 		pdf /= np.sum(pdf)
 		return pdf
 

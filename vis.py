@@ -62,8 +62,11 @@ def human_actions(db, uid, model="kg"):
 
 
 @app.route("/")
+def main():
+	return render_template("index.html")
+
 @app.route("/<model>")
-def main(model="kg"):
+def model(model="kg"):
 	parse.uses_netloc.append("postgres")
 	urls = {
 		"single": parse.urlparse(os.environ["DATABASE_URL_SINGLE"]),
@@ -84,9 +87,20 @@ def main(model="kg"):
 		else:
 			_, model_agreement = analysis.compute_kg()
 
+		print("Original shape (u, g, t): ", model_agreement.shape)
+		# Remove user 4 (u=3)
+		# model_agreement = np.delete(model_agreement, np.s_[3], axis=0)
+		# Remove trial 1 (t=0)
+		model_agreement = np.delete(model_agreement, np.s_[0], axis=2)
+		print("New shape (u, g, t): ", model_agreement.shape)
+		avg_agreement = np.true_divide(np.sum(model_agreement), \
+			model_agreement.shape[0] * model_agreement.shape[1] * model_agreement.shape[2])
+
 		# Average agreement for a user.
 		user_avg_agreement = np.true_divide(np.sum(model_agreement, axis=1), 20)
 		data[interface + "_user_avg_agreement"] = user_avg_agreement.tolist()
+		data[interface + "_avg_agreement"] = avg_agreement.tolist()
+
 	return render_template("vis.html", **data, model=model)
 
 
