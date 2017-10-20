@@ -24,7 +24,7 @@ def human_actions(db, uid, model="kg"):
 	human_actions = analysis.human_actions
 	rewards = analysis.rewards
 
-	kg_actions, kg_agreement = analysis.compute_kg()
+	kg_actions, kg_agreement = analysis.compute_kg(db)
 	greedy_actions, greedy_agreement = analysis.compute_greedy()
 	wsls_actions, wsls_agreement = analysis.compute_wsls()
 
@@ -85,7 +85,7 @@ def model(model="kg"):
 		elif model == "wsls":
 			_, model_agreement = analysis.compute_wsls()
 		else:
-			_, model_agreement = analysis.compute_kg()
+			_, model_agreement = analysis.compute_kg(interface)
 
 		print("Original shape (u, g, t): ", model_agreement.shape)
 		# Remove user 4 (u=3)
