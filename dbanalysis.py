@@ -64,7 +64,6 @@ class Analysis:
 			self.rewards[w, g, t] = r
 
 		# Compute per trial model agreement
-		# TODO: optimization / hyperparam tuning
 		self.kg_agreement = np.zeros((self.num_workers, self.num_games, self.num_trials))
 		self.kg_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
 
@@ -75,13 +74,19 @@ class Analysis:
 		self.wsls_agreement = np.zeros((self.num_workers, self.num_games, self.num_trials))
 		self.wsls_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
 
-	def compute_kg(self):
+	def compute_kg(self, interface=None):
 		alphas = [.25, .5, .75, 1., 1.25, 1.5, 1.75, 2.]
 		betas = [.25, .5, .75, 1., 1.25, 1.5, 1.75, 2.]
 		gammas = [.1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]
 		best_params = [[] for _ in range(self.num_workers)]
 		history = [{} for _ in range(self.num_workers)]
-		# best_params[0] = [0.25, 2.0, 1.0]
+		# Stored values of best params
+		if interface == "single":
+			# Single
+			best_params = [[0.25, 2.0, 1.0], [0.25, 2.0, 0.9], [0.25, 1.25, 1.0], [0.25, 1.25, 1.0], [0.25, 2.0, 1.0], [0.25, 1.75, 0.4], [0.5, 1.75, 1.0]]
+		elif interface == "single-bars":
+			# Single-bars
+			best_params = [[0.25, 2.0, 1.0], [0.25, 2.0, 0.4], [0.25, 1.5, 1.0], [0.25, 1.0, 1.0], [0.25, 0.5, 1.0], [0.25, 2.0, 1.0]]
 		for u in range(self.num_workers):
 			if best_params[u]:
 				alpha, beta, gamma = best_params[u]
