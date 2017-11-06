@@ -64,7 +64,6 @@ class Analysis:
 			self.rewards[w, g, t] = r
 
 		# Compute per trial model agreement
-		# TODO: optimization / hyperparam tuning
 		self.kg_agreement = np.zeros((self.num_workers, self.num_games, self.num_trials))
 		self.kg_actions = np.zeros((self.num_workers, self.num_games, self.num_trials))
 
@@ -82,6 +81,7 @@ class Analysis:
 		best_params = [[] for _ in range(self.num_workers)]
 		history = [{} for _ in range(self.num_workers)]
 		print("interface is ", interface)
+		# Stored values of best params
 		if interface == "single":
 			best_params = [[0.25, 2.0, 1.0], [0.25, 2.0, 0.9], [0.25, 1.25, 1.0], \
 			[0.25, 1.25, 1.0], [0.25, 2.0, 1.0], [0.25, 1.75, 0.4], [0.5, 1.75, 1.0]]

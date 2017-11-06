@@ -13,13 +13,18 @@
 		var rows = JSON.parse({{ rows | tojson | safe}});
 		function visualize(rows) {
 			var charts_options = {
-				title: "User's Actions & Rewards",
-				width: 650,
-				titlePosition: "in",
-				chartArea: { width: "80%", height: "90%" },
+				// title: "User's Actions & Rewards",
+				// titlePosition: "in",
+				// width: 650,
+				width: 900,
+				// chartArea: { width: "80%", height: "90%" },
+				chartArea: { width: "80%", height: "70%" },
 				legend: { position: "none" },
-				hAxis: { format: "#" },
-				vAxis: { textPosition: "none" }
+				hAxis: { format: "#", title: "Trials", titleTextStyle: { italic: false, fontSize: 14 }},
+				vAxis: { title: "Chosen arm", titleTextStyle: { italic: false, fontSize: 14 }},
+				// vAxis: { textPosition: "none" },
+				fontName: "Palatino",
+				annotations: { alwaysOutside: true, stem: { color: "none" }}
 			};
 			var num_tr = 0;
 			for (g = 0; g < rows.length; g++) {
@@ -38,8 +43,9 @@
 
 				var chart = new google.visualization.ColumnChart(document.getElementById("chart_" + String(g + 1)));
 				chart_options = $.extend({}, charts_options);
-				chart_options["title"] = "Game " + String(g + 1);
+				// chart_options["title"] = "Game " + String(g + 1);
 				chart.draw(data, chart_options);
+				break;
 			}
 		}
 	</script>

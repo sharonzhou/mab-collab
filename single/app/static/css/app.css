@@ -1,6 +1,14 @@
+table {
+	border-collapse: collapse;
+}
+
 th, td {
 	padding-left: 15px;
 	padding-right: 15px;
+}
+
+th {
+	border-bottom: 1px solid black;
 }
 
 #score_wrapper, #gameover {
@@ -48,7 +56,7 @@ th, td {
 }
 
 body {
-	font-family: sans-serif;
+	font-family: Palatino;
 	margin-left: 50px;
 }
 
@@ -75,9 +83,10 @@ body {
 }
 
 button {
+	font-family: Palatino;
 	border: none;
 	border-radius: 2px;
-	color: white;
+	color: black;
 	text-align: center;
 	display: inline-block;
 	-webkit-transition: all .1s;

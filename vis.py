@@ -34,28 +34,29 @@ def human_actions(db, uid, model="kg"):
 	for g, game in enumerate(actions):
 		rows[g] = [[] for _ in range(len(game))]
 		for t, _ in enumerate(game):
-			style = "fill-color: red"
+			style = "fill-color: rgb(211,94,96);"
 			if rewards[int(uid)][g][t]:
-				style = "fill-color: green"
+				style = "fill-color: rgb(132,186,91);"
 
 			if model == "greedy":
 				model_agreement = greedy_agreement
-				annotation = "eG: {}".format(str(int(greedy_actions[int(uid)][g][t] + 1)))
+				annotation = "eG {}".format(str(int(greedy_actions[int(uid)][g][t] + 1)))
 			elif model == "wsls":
 				model_agreement = wsls_agreement
-				annotation = "WSLS: {}".format(str(int(wsls_actions[int(uid)][g][t] + 1)))
+				annotation = "WSLS {}".format(str(int(wsls_actions[int(uid)][g][t] + 1)))
 			else:
 				model_agreement = kg_agreement
-				annotation = "KG: {}".format(str(int(kg_actions[int(uid)][g][t] + 1)))
+				annotation = "KG {}".format(str(int(kg_actions[int(uid)][g][t] + 1)))
 
 			tooltip = "KG: {}\n".format(str(int(kg_actions[int(uid)][g][t] + 1))) + \
 						" eG: {}\n".format(str(int(greedy_actions[int(uid)][g][t] + 1))) + \
 						" WSLS: {}".format(str(int(wsls_actions[int(uid)][g][t] + 1)))
 
 			if model_agreement[int(uid)][g][t]:
-				style += "; stroke-color: gray; stroke-width: 1; fill-opacity: 1"
+				# style += "stroke-color: gray; stroke-width: 1; fill-opacity: 1;"
+				style += "fill-opacity: 1;"
 			else:
-				style += "; fill-opacity: .2"
+				style += "fill-opacity: .2;"
 
 			rows[g][t] = ["Trial {}".format(str(t + 1)), actions[g][t] + 1, style, annotation, tooltip]
 	return render_template("human_actions.html", rows=json.dumps(rows), user=uid, interface=db)
