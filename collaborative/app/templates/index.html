@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+	<h1>Welcome!</h1> 
+	<div><b>Instructions:</b> This task takes 3 minutes, and you will be compensated $0.5 if you get 5+ points for all games, with the exception of one game. There are 20 games, with 15 trials each. In each trial, you can earn 1 or 0 points for a total of 15 points per game.</div>
+	</br> 
+	<div>You will have 4 choices to choose from in the trial. Each choice has a different chance of getting 1 point or no points in each trial. These chances are reset at each game. The goal is to maximize the number of points you get in total across all games.</div>
+	</br>
+	<div>We will reward the top players with a bonus of $2.</div>
+	</br>
+	<div>Please submit your Worker ID to begin:</div>
+	<input id="amt_id" type="text">
+	<input id="start" type="submit">
+{% endblock %}
