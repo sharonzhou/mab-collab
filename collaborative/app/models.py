@@ -17,10 +17,11 @@ class Move(db.Model):
 	trial = db.Column(db.Integer())
 	game = db.Column(db.Integer())
 	reward = db.Column(db.Integer())
+	score = db.Column(db.Integer())
 
 	def __repr__(self):
-		return "<Move {} by {} on arm {} for game {} trial {} with reward {}>"\
-			.format(self.id, self.uid, self.chosen_arm, self.game, self.trial, self.reward)
+		return "<Move {} by {} on arm {} for game {} trial {} with reward {} and score {}>"\
+			.format(self.id, self.uid, self.chosen_arm, self.game, self.trial, self.reward, self.score)
 
 class Room(db.Model):
 	id = db.Column(db.Integer(), primary_key=True)
@@ -43,3 +44,4 @@ class Room(db.Model):
 
 
 db.create_all()
+db.session.commit()

@@ -3,8 +3,6 @@
 {% block body %}
 	<script async type="text/javascript">
 	  var vars = {{ vars|tojson|safe }};
-	  console.log(vars);
-	  // if vars for restoration exist, then restore; might just move choose arm client side code to just update the state to the session var and then render/restore all the session vars here
 	</script>
 	<span id="game_wrapper" class="wrapper">Game <span id="game">1</span> of 20</span>
 	<span id="trial_wrapper" class="wrapper">Trial <span id="trial">1</span> of 15</span>

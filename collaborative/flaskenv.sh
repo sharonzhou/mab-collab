@@ -1,0 +1,1 @@
+export FLASK_APP=$PWD/app/__init__.py
