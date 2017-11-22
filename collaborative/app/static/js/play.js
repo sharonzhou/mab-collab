@@ -1,4 +1,5 @@
 $(function() {
+	console.log('play.js')
 	var table = '<table><tr>';
 	for (var i=0; i<20; i++) {
 		table += '<th>' + String(i + 1) + '</th>';
@@ -58,6 +59,7 @@ $(function() {
 		}
 
 	};
+
 	var choose_arm = function(id, uid) {
 		var game = parseInt($('#game').html());
 		var trial = parseInt($('#trial').html());
@@ -79,15 +81,6 @@ $(function() {
 			$('.choice').click(function(){ choose_arm(this.id, vars.uid) });
 		} 
 	}
-
-	var start_game = function(amt_id) {
-		$.getJSON($SCRIPT_ROOT + '/_create_user', {
-			amt_id: amt_id
-		}, function(data) {
-			$(location).attr('href', $SCRIPT_ROOT);
-		});
-	};
-	$('#start').click(function(){ start_game($('#amt_id').val()) })
 
 	var next_game = function() {
 		$.getJSON($SCRIPT_ROOT + '/_next_game', {

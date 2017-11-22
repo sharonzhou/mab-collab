@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block head %}
+	{{ super() }}
+	<script async type=text/javascript src="{{ url_for('static', filename='js/wait.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+	<script async type="text/javascript">
+	  var vars = {{ vars|tojson|safe }};
+	</script>
+	<h1>Waiting Room</h1>
+	<div id="waiting_text">Good job on the practice round! We're pairing you with a partner.</div> 
+	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
+	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
+	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
+	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
+	<div><b>Instructions</b> (same as before):</div>
+	</br> 
+	<div>In the game, you will choose between <b>4 choices</b> in each round. Each choice has a <b>different chance of getting 1 point or no points</b>. You will play 15 rounds (aka. make 15 choices) for each game. These chances are reset to something different at the beginning of a game. The goal is to get the most points with your partner.</div>
+	</br>
+	<div>Each game has 15 rounds. You will play 20 games with your partner.</div>
+	</br></br>
+	<div><b>Wait time</b>:</div>
+	</br>
+	<div>You've been waiting for <span id="timer">0min 0s</span>. If you wait more than 20min, we'll compensate you the waiting time amount, for which you'll see a completion code.</div>
+{% endblock %}

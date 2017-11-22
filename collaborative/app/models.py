@@ -3,7 +3,7 @@ from app import db
 class Worker(db.Model):
 	id = db.Column(db.Integer(), primary_key=True)
 	amt_id = db.Column(db.String(512))
-	room_id = db.Column(db.Integer())
+	room_id = db.Column(db.Integer(), nullable=True)
 	is_ready = db.Column(db.Boolean())
 
 	def __repr__(self):

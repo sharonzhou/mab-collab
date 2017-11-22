@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block head %}
+	{{ super() }}
+	<script async type=text/javascript src="{{
+		url_for('static', filename='js/play.js') }}"></script>
+{% endblock %}
+
 {% block body %}
 	<script async type="text/javascript">
 	  var vars = {{ vars|tojson|safe }};

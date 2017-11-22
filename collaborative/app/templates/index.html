@@ -1,11 +1,18 @@
 {% extends "base.html" %}
+
+{% block head %}
+	{{ super() }}
+	<script async type=text/javascript src="{{
+		url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}
+
 {% block body %}
 	<h1>Welcome!</h1> 
-	<div><b>Instructions:</b> This task takes 3 minutes, and you will be compensated $0.5 if you get 5+ points for all games, with the exception of one game. There are 20 games, with 15 trials each. In each trial, you can earn 1 or 0 points for a total of 15 points per game.</div>
+	<div><b>Instructions:</b> You will do 1 practice round of the game by yourself (does not count toward final score). Then, we'll pair you with a partner (this counts :)).</div>
 	</br> 
-	<div>You will have 4 choices to choose from in the trial. Each choice has a different chance of getting 1 point or no points in each trial. These chances are reset at each game. The goal is to maximize the number of points you get in total across all games.</div>
+	<div>In the game, you will choose between <b>4 choices</b> in each round. Each choice has a <b>different chance of getting 1 point or no points</b>. You will play 15 rounds (aka. make 15 choices) for each game. These chances are reset to something different at the beginning of a game. The goal is to get the most points with your partner.</div>
 	</br>
-	<div>We will reward the top players with a bonus of $2.</div>
+	<div>Each game has 15 rounds. You will play 20 games with your partner, and 1 practice round by yourself.</div>
 	</br>
 	<div>Please submit your Worker ID to begin:</div>
 	<input id="amt_id" type="text">
