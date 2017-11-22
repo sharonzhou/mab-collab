@@ -3,7 +3,7 @@
 {% block head %}
 	{{ super() }}
 	<script async type=text/javascript src="{{
-		url_for('static', filename='js/play.js') }}"></script>
+		url_for('static', filename='js/play_single.js') }}"></script>
 {% endblock %}
 
 {% block body %}
@@ -21,6 +21,4 @@
 	<div id="reward_wrapper">You got <span id="reward">0 or 1</span> point for that choice.</div>
 	<div id="score_wrapper" class="wrapper">Total points this game: <span id="score">0</span></div>
 	<div id="nextbutton_wrapper"></div>
-	</br>
-	<div id="table">Points per game:</div>
 {% endblock %}

@@ -2,10 +2,9 @@
 {% block head %}
 	<title>Task</title>
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/app.css') }}">
+	<link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}" type="image/x-icon">
 	<script async src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 	<script async>window.jQuery || document.write('<script src="{{ url_for('static', filename='js/jquery.js') }}">\x3C/script>')</script>
-<!-- 	<script async type=text/javascript src="{{
-	  url_for('static', filename='js/app.js') }}"></script> -->
 	<script async type="text/javascript">
 	  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 	</script>

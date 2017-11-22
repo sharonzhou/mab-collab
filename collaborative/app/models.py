@@ -5,6 +5,7 @@ class Worker(db.Model):
 	amt_id = db.Column(db.String(512))
 	room_id = db.Column(db.Integer(), nullable=True)
 	is_ready = db.Column(db.Boolean())
+	last_active = db.Column(db.DateTime())
 
 	def __repr__(self):
 		return "<User {}: {}>".format(self.id, self.amt_id)

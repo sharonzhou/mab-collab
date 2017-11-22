@@ -1,5 +1,5 @@
 $(function() {
-	console.log('play.js')
+	console.log('play_double.js', vars)
 	var table = '<table><tr>';
 	for (var i=0; i<20; i++) {
 		table += '<th>' + String(i + 1) + '</th>';

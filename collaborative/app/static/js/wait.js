@@ -1,29 +1,16 @@
 $(function() {
-	console.log('wait.js')
+	console.log('wait.js', vars)
 
 	// Notify user that we've matched them and we're ready to begin
-	var confirm_start = false;
 	var last_active = 0;
 	var notify_user = function() {
 		if ($('body').hasClass('hidden')) {
 			document.title = document.title == 'Starting game...' ? 'Waiting room' : 'Starting game...'
 			setTimeout(notify_user, 500);
-			// Detect if user hasn't been active for 2min
-			if (Math.floor((new Date() - last_active) / 60000) > 2) {
-				// Revise db
-				$.getJSON($SCRIPT_ROOT + '/_drop_user', {
-					uid: vars.uid
-				}, function(data) {
-					console.log('Dropped user; response is ', data.response)
-				});
-			}
 		} else if ($('body').hasClass('visible')) {
-			confirm_start = true;
+			// Redirect
+			$(location).attr('href', $SCRIPT_ROOT);
 		}
-	}
-
-	if (confirm_start) {
-		$(location).attr('href', $SCRIPT_ROOT);
 	}
 
 	// Poll/ping server ever 1 sec (wait) to match a parter
@@ -38,7 +25,7 @@ $(function() {
 				document.title = 'Starting game...';
 				last_active = Date.now();
 				// Flash notification on document title until window is active
-				confirm_start = notify_user();
+				notify_user();
 			} else {
 				setTimeout(ping_server, 1000);
 			}

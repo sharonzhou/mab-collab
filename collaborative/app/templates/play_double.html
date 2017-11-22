@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block head %}
+	{{ super() }}
+	<script async type=text/javascript src="{{
+		url_for('static', filename='js/play_double.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+	<script async type="text/javascript">
+	  var vars = {{ vars|tojson|safe }};
+	</script>
+	<span id="game_wrapper" class="wrapper">Game <span id="game">1</span> of 20</span>
+	<span id="trial_wrapper" class="wrapper">Trial <span id="trial">1</span> of 15</span>
+	<p>
+		<button type="button" class="button-1 choice" id="1">Choice 1</button>
+		<button type="button" class="button-2 choice" id="2">Choice 2</button>
+		<button type="button" class="button-3 choice" id="3">Choice 3</button>
+		<button type="button" class="button-4 choice" id="4">Choice 4</button>
+	</p>
+	<div id="reward_wrapper"><span id="past_turn_uid">You/Your partner</span> got <span id="reward">0 or 1</span> point for that choice.</div>
+	<div id="reward_unobserved">You cannot see this reward.</div>
+	<div>Your partner <span id="partner_observed">can/cannot</span> see this reward.</div>
+	<div>Turn: <span id="turn_uid">you or your partner's</span></div>
+	<div id="score_wrapper" class="wrapper">Total points this game you've been able to see: <span id="score">0</span></div>
+	<div id="nextbutton_wrapper"></div>
+	</br>
+	<div id="table">Points per game:</div>
+{% endblock %}
