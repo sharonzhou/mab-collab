@@ -12,6 +12,16 @@ $(function() {
 	$('#table').append(table);
 
 	var display_state = function(uid, score, reward, game, trial, nextGameBtnBool, completionCodeBool, scores=[]) {
+		// If your turn:
+			// enable buttons 
+			// display YOUR turn
+		// else: 
+			// disable buttons
+			// display PARTNER's turn
+			// poll server for partner taking a turn (external function)
+		// After a move: make sure to display who just made a decision & reward (then hide reward)
+			// another display_state update from polling server if partner's turn, else from choose_arm()
+
 		$('#game').text(game);
 		if (trial > 15) {
 			trial = 15
