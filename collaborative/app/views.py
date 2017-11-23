@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 @app.route('/logout')
 def logout():
 	print('logout', session)
-	session.pop('amt_id', None)
+	session.clear()
 	return redirect(url_for('index'))
 
 @app.route('/_next_game')
@@ -113,7 +113,7 @@ def make_waiting_completion_code():
 	print('waiting_completion_code', session)
 	if 'amt_id' in session:
 		x = session['amt_id'][0]
-		code = ''.join('t' + random.sample(string.ascii_letters + string.digits, 3)) + str(x) + ''.join(random.sample(string.ascii_letters + string.digits, 3)) 	
+		code = 't' + ''.join(random.sample(string.ascii_letters + string.digits, 3)) + str(x) + ''.join(random.sample(string.ascii_letters + string.digits, 3)) 	
 		return jsonify(code=code)
 
 @app.route('/_enter_waiting')

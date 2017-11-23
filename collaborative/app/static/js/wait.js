@@ -35,22 +35,29 @@ $(function() {
 	ping_server();
 
 	// Display timer
+	var MAX_WAIT_MIN = 20
 	var elapsed_seconds = 0;
-	setInterval(function() {
-		elapsed_seconds = elapsed_seconds + 1;
-		$('#timer').text((Math.floor(elapsed_seconds / 60)).toString() + 'min ' + (elapsed_seconds % 60).toString() + 's');
+	var elapse_timer = setInterval(function() {
+		if ($('#waiting_completion_code').length) {
+			clearInterval(elapse_timer)
+		} else {
+			elapsed_seconds = elapsed_seconds + 1;
+			if (elapsed_seconds <= MAX_WAIT_MIN * 60) {
+				$('#timer').text((Math.floor(elapsed_seconds / 60)).toString() + 'min ' + (elapsed_seconds % 60).toString() + 's');
+			}
+
+			// If 20 min of waiting, give adapted completion code (we'll just pay them for waiting)
+			if (elapsed_seconds > MAX_WAIT_MIN * 60) {
+				$.getJSON($SCRIPT_ROOT + '/_waiting_completion_code', {
+					uid: vars.uid
+				}, function(data_hidden) {
+					code = data_hidden.code
+					$('body').append('</br><div id="waiting_completion_code">Sorry to make you wait so long. No need to continue. Please submit the waiting completion code: <b>' + code + '</b></div>');
+				});
+			}
+		}
 	}, 1000);
 
-	// If 20 min of waiting, give adapted completion code (we'll just pay them for waiting)
-	var start_wait = Date.now();
-	if (Math.floor((new Date() - start_wait) / 60000) > 20) {
-		$.getJSON($SCRIPT_ROOT + '/_waiting_completion_code', {
-			uid: vars.uid
-		}, function(data_hidden) {
-			code = data_hidden.code
-			$('body').append('<div><span id="gameover">Sorry to make you wait so long. No need to continue. Please submit the waiting completion code:</span> ' + code + '</div>');
-		});
-	}
 
 	// Detect if tab/window is visible (cf. stackoverflow)
 	(function() {
