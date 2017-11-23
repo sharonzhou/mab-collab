@@ -15,20 +15,6 @@ def logout():
 	session.clear()
 	return redirect(url_for('index'))
 
-def advance_next_game(max_trials, max_games, scores, score, completion_code, next_game_bool, trial, game, reward):
-	completion_code = False
-	if trial == max_trials:
-		scores.append(score)
-	if game >= max_games:
-		completion_code = True
-	else:
-		next_game_bool = True
-		score = 0
-		trial = 1
-		game += 1
-		reward = None
-	return reward, trial, game
-
 @app.route('/_check_partner_move')
 def check_partner_move():
 	# print('check_partner_move', session)
@@ -41,8 +27,6 @@ def check_partner_move():
 	session['next_turn_uid'] = turn
 
 	# Partner moved (it's your turn now); update session vars
-	# print(room)
-	# print('check_partner_move, turn is: ', turn, 'my uid is', session['uid'])
 	if turn == session['uid']:
 		session['partner_moved'] = True
 		session['game'] = room.game
@@ -50,19 +34,12 @@ def check_partner_move():
 		session['reward'] = room.reward
 		session['past_reward'] = room.reward #TODO: when new game happens, show past reward from past game (grayed out?), but then show new game w/o score I guess...
 		session['chosen_arm'] = room.chosen_arm
-		session['completion_code'] = False
+		session['completion_code'] = room.completion_code
+		session['next_game_bool'] = room.next_game_bool
+		session['scores'] = room.scores
+		print('queried scores from db', room.scores)
 
 		# TODO: partial observability: update session score appropriately
-
-		# End or next game
-		if session['trial'] >= MAX_TRIALS:
-			advance_next_game(MAX_TRIALS, MAX_GAMES, session['scores'], session['score'], \
-				session['completion_code'], session['next_game_bool'], session['trial'], \
-				session['game'], session['reward'])
-			room.reward = session['reward']
-			room.game = session['game']
-			room.trial = session['trial']
-			db.session.commit()
 	
 	session_vars = {}
 	for k, v in session.items():
@@ -109,7 +86,7 @@ def give_reward():
 
 	# Set default session vars
 	session['next_game_bool'] = False
-	session['completion_code'] = False
+	session['completion_code'] = None
 
 	# If playing double, update room
 	if 'room_id' in session and session['room_id'] != 0:
@@ -117,9 +94,24 @@ def give_reward():
 
 		# End or next game
 		if session['trial'] >= MAX_TRIALS:
-			advance_next_game(MAX_TRIALS, MAX_GAMES, session['scores'], session['score'], \
-				session['completion_code'], session['next_game_bool'], session['trial'], \
-				session['game'], session['reward'])
+			if trial == MAX_TRIALS:
+				session['scores'].append(session['score'])
+			if game >= MAX_GAMES:
+				# Give completion code
+				x = session['amt_id'][-1]
+				code = ''.join(random.sample(string.ascii_letters + string.digits, 3)) + str(x) + ''.join(random.sample(string.ascii_letters + string.digits, 3)) 	
+				session['completion_code'] = code
+
+				# Store value in room for partner to query
+				room = Room.query.get(session['room_id'])
+				room.completion_code = code
+				db.session.commit()
+			else:
+				session['next_game_bool'] = True
+				session['score'] = 0
+				session['trial'] = 1
+				session['game'] += 1
+				session['reward'] = None
 
 		# Switch to partner's turn
 		room = Room.query.get(session['room_id'])
@@ -129,6 +121,9 @@ def give_reward():
 		room.reward = reward
 		room.trial = session['trial']
 		room.game = session['game']
+		room.scores = session['scores']
+		room.completion_code = session['completion_code']
+		room.next_game_bool = session['next_game_bool']
 		db.session.commit()
 
 		session['next_turn_uid'] = room.p1_uid if room.p2_uid == session['uid'] else room.p2_uid
@@ -157,14 +152,6 @@ def insert_user():
 
 	# Return vars for debugging on client side
 	return jsonify(amt_id=amt_id, uhash=uhash)
-
-@app.route('/_completion_code')
-def make_completion_code():
-	print('make_completion_code', session)
-	if 'amt_id' in session:
-		x = session['amt_id'][-1]
-		code = ''.join(random.sample(string.ascii_letters + string.digits, 3)) + str(x) + ''.join(random.sample(string.ascii_letters + string.digits, 3)) 	
-		return jsonify(code=code)
 
 @app.route('/_waiting_completion_code')
 def make_waiting_completion_code():

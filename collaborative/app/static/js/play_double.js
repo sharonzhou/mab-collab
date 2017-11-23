@@ -30,7 +30,7 @@ $(function() {
 		});   
 	}
 
-	var display_state = function(uid, score, reward, game, trial, nextGameBool, completionCodeBool, scores=[], next_turn_uid, room_id, chosen_arm) {
+	var display_state = function(uid, score, reward, game, trial, nextGameBool, completionCode, scores=[], next_turn_uid, room_id, chosen_arm) {
 		console.log('display_state', reward, next_turn_uid)
 		$('#turn_uid').css('visibility', 'visible');
 		if (trial == 1) {
@@ -40,12 +40,11 @@ $(function() {
 
 		// Your turn
 		if (next_turn_uid == uid) {
-			console.log('its my turn')
+			console.log('it\'s my turn')
 			// Enable buttons; display your turn, partner's past turn arm & reward #TODO: partial observability
 			$('.choice').prop("disabled", false);
 			$('.choice').removeClass("disabled");
 			$('.choice').one('click', function(){ choose_arm(this.id) });
-			// $('.choice').click(function(){ choose_arm(this.id) });
 			$('#turn_uid').text('You');
 			$('#past_turn_uid').text('Your partner');
 			// TODO: for partial observability - and toggle the divs
@@ -55,7 +54,7 @@ $(function() {
 			}
 		// Partner's turn
 		} else {
-			console.log('its my partners turn')
+			console.log('it\'s my partner\'s turn')
 			// Disable buttons; display partner's turn, your past turn arm & reward #TODO: partial observability
 			$('.choice').prop("disabled", true);			
 			$('.choice').addClass("disabled");
@@ -96,15 +95,8 @@ $(function() {
 			$('#next_game_notification').text('');
 		};
 
-		if (completionCodeBool) {
-			$.getJSON($SCRIPT_ROOT + '/_completion_code', {
-				uid: uid
-			}, function(data_hidden) {
-				if ($("#gameover").length == 0) {
-					code = data_hidden.code
-					$('body').append('<div><span id="gameover">Gameover!</span> Completion code: ' + code + '</div>');
-				}
-			});
+		if (completionCode != null && completionCode != false) {
+			$('body').append('<div><span id="gameover">Gameover!</span> Completion code: ' + completionCode + '</div>');
 		};
 
 		for (i = 0; i < scores.length; i++) {

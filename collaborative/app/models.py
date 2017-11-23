@@ -1,4 +1,5 @@
 from app import db
+from sqlalchemy_utils import ScalarListType
 
 class Worker(db.Model):
 	id = db.Column(db.Integer(), primary_key=True)
@@ -36,12 +37,17 @@ class Room(db.Model):
 	trial = db.Column(db.Integer())
 	game = db.Column(db.Integer())
 	reward = db.Column(db.Integer())
+	next_game_bool = db.Column(db.Boolean())
+	completion_code = db.Column(db.String(1024))
+	scores = db.Column(ScalarListType(int))
 
 	def __repr__(self):
 		return "<Room {} with {} and {}, next turn is player {}, \
-			last move at time {}, chosen arm {}, on game {}, trial {}, reward {}>"\
+			last move at time {}, chosen arm {}, on game {}, trial {}, reward {},\
+			next game? {}, completion code {}>"\
 			.format(self.id, self.p1_uid, self.p2_uid, self.next_turn_uid, 
-				self.time_last_move, self.chosen_arm, self.game, self.trial, self.reward)
+				self.time_last_move, self.chosen_arm, self.game, self.trial, self.reward,
+				self.next_game_bool, self.completion_code)
 
 
 db.create_all()
