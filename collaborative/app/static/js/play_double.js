@@ -1,5 +1,7 @@
 $(function() {
 	console.log('play_double.js', vars)
+
+	// Construct points table
 	var table = '<table><tr>';
 	for (var i=0; i<20; i++) {
 		table += '<th>' + String(i + 1) + '</th>';
@@ -11,16 +13,60 @@ $(function() {
 	table += '</tr></table>';
 	$('#table').append(table);
 
-	var display_state = function(uid, score, reward, game, trial, nextGameBtnBool, completionCodeBool, scores=[]) {
-		// If your turn:
-			// enable buttons 
-			// display YOUR turn
-		// else: 
-			// disable buttons
-			// display PARTNER's turn
-			// poll server for partner taking a turn (external function)
-		// After a move: make sure to display who just made a decision & reward (then hide reward)
-			// another display_state update from polling server if partner's turn, else from choose_arm()
+	// Polls server to check if partner moved
+	// TODO: check if partner dropped out (the last room activity time > 2min), then give modified completion code
+	var ping_server = function(uid, room_id) {
+		$.getJSON($SCRIPT_ROOT + '/_check_partner_move', {
+			uid: uid,
+			room_id: room_id
+		}, function(data) {
+			if (data.partner_moved == true) {
+				console.log('ping server')
+				display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool, data.completion_code, data.scores, data.next_turn_uid, data.room_id, data.chosen_arm);
+			} else {
+				// Continue polling
+				setTimeout(ping_server, 1000);
+			}
+		});   
+	}
+
+	var display_state = function(uid, score, reward, game, trial, nextGameBool, completionCodeBool, scores=[], next_turn_uid, room_id, chosen_arm) {
+		console.log('display_state', reward, next_turn_uid)
+		$('#turn_uid').css('visibility', 'visible');
+		if (trial == 1) {
+			$('#partner_observed_wrapper').css('visibility', 'visible');
+			$('#partner_observed_wrapper').css('visibility', 'visible');			
+		}
+
+		// Your turn
+		if (next_turn_uid == uid) {
+			console.log('its my turn')
+			// Enable buttons; display your turn, partner's past turn arm & reward #TODO: partial observability
+			$('.choice').prop("disabled", false);
+			$('.choice').removeClass("disabled");
+			$('.choice').one('click', function(){ choose_arm(this.id) });
+			// $('.choice').click(function(){ choose_arm(this.id) });
+			$('#turn_uid').text('You');
+			$('#past_turn_uid').text('Your partner');
+			// TODO: for partial observability - and toggle the divs
+			if (reward != null) {
+				$('#reward_observed').css('visibility', 'visible');
+				$('#reward').text(reward.toString());
+			}
+		// Partner's turn
+		} else {
+			console.log('its my partners turn')
+			// Disable buttons; display partner's turn, your past turn arm & reward #TODO: partial observability
+			$('.choice').prop("disabled", true);			
+			$('.choice').addClass("disabled");
+			$('#turn_uid').text('Partner');
+			$('#past_turn_uid').text('You');
+			// TODO: for partial observability - and toggle the divs
+			if (reward != null) {
+				$('#reward_observed').css('visibility', 'visible');
+				$('#reward').text(reward.toString());
+			}
+		}
 
 		$('#game').text(game);
 		if (trial > 15) {
@@ -33,23 +79,21 @@ $(function() {
 		if (reward == 1) {
 			$('#reward').css('color', '#2c7bb6');
 			$('#score').text(score);
-			$('#reward').fadeOut(50);
-			$('#score').fadeOut(50);
-			$('#reward').fadeIn(25);
-			$('#score').fadeIn(25);
 		} else if (reward == 0) {
-			$('#reward').css('color', '#d7191c');				
-			$('#reward').fadeOut(50);
-			$('#reward').fadeIn(25);
+			$('#reward').css('color', '#d7191c');
 		} else {
 			$('#reward').text('0 or 1');
 			$('#reward').css('color', 'black');
 		}
 
-		if (nextGameBtnBool) { 
-			$('#nextbutton_wrapper').append('<button id="nextbutton">Go to next game</button>');
+		if (nextGameBool) { 
+			$('#next_game_notification').text('BEGIN NEW GAME');
+			for (i = 0; i < 2; i++) {
+				$('#next_game_notification').fadeOut(75);
+				$('#next_game_notification').fadeIn(50);
+			}
 		} else {
-			$('#nextbutton_wrapper').html('');
+			$('#next_game_notification').text('');
 		};
 
 		if (completionCodeBool) {
@@ -70,35 +114,34 @@ $(function() {
 
 	};
 
-	var choose_arm = function(id, uid) {
-		var game = parseInt($('#game').html());
-		var trial = parseInt($('#trial').html());
+	var choose_arm = function(id) {
+		// Disable choices immediately to prevent cascading click effects
+		$('.choice').prop("disabled", true);			
+		$('.choice').addClass("disabled");
 		$.getJSON($SCRIPT_ROOT + '/_choose_arm', {
 			k: id
 		}, function(data) {
-			if ($("#gameover").length != 0 || $('#nextbutton').length != 0) {
+			if ($("#gameover").length != 0) {
 				return;
+			} else {				
+				console.log('choose arm');
+
+				display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool, data.completion_code, data.scores, data.next_turn_uid, data.room_id, data.chosen_arm);
+
+				// Poll server for partner completing turn
+				ping_server(data.uid, data.room_id);
 			}
-			display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_button, data.completion_code, data.scores)
-			return false;
 		});
-		return false;
 	};
 
 	if (typeof vars !== 'undefined') {
-		display_state(vars.uid, vars.score, vars.reward, vars.game, vars.trial, vars.next_game_button, vars.completion_code, vars.scores)
-		if (vars.next_game_button != true) {
-			$('.choice').click(function(){ choose_arm(this.id, vars.uid) });
-		} 
+		console.log('regular vars');
+		display_state(vars.uid, vars.score, vars.reward, vars.game, vars.trial, vars.next_game_bool, vars.completion_code, vars.scores, vars.next_turn_uid, vars.room_id, vars.chosen_arm);
+		
+		// Poll server for partner completing turn
+		if (vars.next_turn_uid != vars.uid) {
+			ping_server(vars.uid, vars.room_id);
+		}
 	}
 
-	var next_game = function() {
-		$.getJSON($SCRIPT_ROOT + '/_next_game', {
-		}, function(data) {
-			display_state(data.uid, data.score, null, data.game, data.trial, false, false, scores=data.scores)
-		});
-	}
-	$('#nextbutton_wrapper').on('click', '#nextbutton', function(){
-    	next_game();
-	});
 });

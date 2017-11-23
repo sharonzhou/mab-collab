@@ -41,15 +41,15 @@ $(function() {
 			if ($('#nextbutton').length != 0) {
 				return;
 			}
-			display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_button)
+			display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool)
 			return false;
 		});
 		return false;
 	};
 
 	if (typeof vars !== 'undefined') {
-		display_state(vars.uid, vars.score, vars.reward, vars.game, vars.trial, vars.next_game_button)
-		if (vars.next_game_button != true) {
+		display_state(vars.uid, vars.score, vars.reward, vars.game, vars.trial, vars.next_game_bool)
+		if (vars.next_game_bool != true) {
 			$('.choice').click(function(){ choose_arm(this.id, vars.uid) });
 		} 
 	}

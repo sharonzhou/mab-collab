@@ -35,13 +35,13 @@ class Room(db.Model):
 	chosen_arm = db.Column(db.Integer())
 	trial = db.Column(db.Integer())
 	game = db.Column(db.Integer())
-	score = db.Column(db.Integer())
+	reward = db.Column(db.Integer())
 
 	def __repr__(self):
 		return "<Room {} with {} and {}, next turn is player {}, \
 			last move at time {}, chosen arm {}, on game {}, trial {}, reward {}>"\
 			.format(self.id, self.p1_uid, self.p2_uid, self.next_turn_uid, 
-				self.time_last_move, self.chosen_arm, self.game, self.trial, self.cumulative_reward)
+				self.time_last_move, self.chosen_arm, self.game, self.trial, self.reward)
 
 
 db.create_all()

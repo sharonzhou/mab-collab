@@ -13,7 +13,7 @@ $(function() {
 		}
 	}
 
-	// Poll/ping server ever 1 sec (wait) to match a parter
+	// Ping/poll server ever 1 sec (wait) to match a parter
 	var ping_server = function() {
 		$.getJSON($SCRIPT_ROOT + '/_waiting_ping', {
 			uid: vars.uid

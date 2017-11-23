@@ -35,6 +35,14 @@ th {
 	padding: 3px 5px;
 }
 
+.disabled {
+	background-color: #d3d3d3 !important;
+}
+
+.disabled:hover {
+	opacity: 1;
+}
+
 .button-1 {
 	background-color: #d7191c;
 }
