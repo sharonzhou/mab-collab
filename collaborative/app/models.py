@@ -37,9 +37,11 @@ class Room(db.Model):
 	trial = db.Column(db.Integer())
 	game = db.Column(db.Integer())
 	reward = db.Column(db.Integer())
-	next_game_bool = db.Column(db.Boolean())
 	completion_code = db.Column(db.String(1024))
-	scores = db.Column(ScalarListType(int))
+	p1_score = db.Column(db.Integer())
+	p2_score = db.Column(db.Integer())
+	p1_scores = db.Column(ScalarListType(int))
+	p2_scores = db.Column(ScalarListType(int))
 
 	def __repr__(self):
 		return "<Room {} with {} and {}, next turn is player {}, \
