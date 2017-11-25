@@ -56,49 +56,50 @@ $(function() {
 	};
 
 	var display_common_state = function(trial, game, score, chosen_arm, reward, completion_code, scores, is_observable, partner_is_observable, experimental_condition) {
-		$('#game').text(game);
 		if (trial > 15) {
 			trial = 15
-		} 
+		}
+
+		if (trial == 1) {
+			// Hide stuff
+			$('#turn_information').css('visibility', 'hidden');
+		} else if (trial == 15) {
+			// TODO: Flash end game screen for 3 seconds (show countdown timer to next game)
+		} else {
+			$('#turn_information').css('visibility', 'visible');
+			if (reward != null || is_observable != null || partner_is_observable != null) {
+				if (is_observable == true) {
+					if (reward == 1) {
+						$('#reward').text(reward);
+						$('#reward').css('color', '#2c7bb6');
+					} else if (reward == 0) {
+						$('#reward').text(reward);
+						$('#reward').css('color', '#d7191c');
+					} 
+				} else {
+					$('#reward').text('hidden');
+					$('#reward').css('color', '#d3d3d3');
+				}
+
+				if (experimental_condition != 'control') {
+					if (partner_is_observable == true) {
+						$('#partner_observation').text('Your partner sees this.');
+					} else {
+						$('#partner_observation').text('Hidden from your partner.');
+					}
+				}
+			} else {
+				$('#reward_unobserved').css('visibility', 'hidden');
+				$('#reward_observed').css('visibility', 'hidden');
+				$('#partner_observed').css('visibility', 'hidden');
+				$('#partner_unobserved').css('visibility', 'hidden');
+			}	
+		}
+
+		$('#game').text(game);
 		$('#trial').text(trial);
 		$('#score').text(score);
 		$('#chosen_arm').text(chosen_arm);
-
-		console.log('can my partner see?', partner_is_observable, '// can i see?', is_observable)
-		if (reward != null || is_observable != null || partner_is_observable != null) {
-			if (is_observable == true) {
-				if (reward == 1) {
-					$('#reward').text(reward);
-					$('#reward').css('color', '#2c7bb6');
-				} else if (reward == 0) {
-					$('#reward').text(reward);
-					$('#reward').css('color', '#d7191c');
-				} 
-			} else {
-				$('#reward').text('hidden');
-				$('#reward').css('color', '#d3d3d3');
-			}
-
-			if (experimental_condition != 'control') {
-				if (partner_is_observable == true) {
-					$('#partner_observation').text('Your partner sees this.');
-				} else {
-					$('#partner_observation').text('Hidden from your partner.');
-				}
-			}
-
-		} else {
-			$('#reward_unobserved').css('visibility', 'hidden');
-			$('#reward_observed').css('visibility', 'hidden');
-			$('#partner_observed').css('visibility', 'hidden');
-			$('#partner_unobserved').css('visibility', 'hidden');
-		}
-
-		if (trial == 1 && game != 1) {
-			$('#new_game_text').css('visibility', 'visible');
-		} else {
-			$('#new_game_text').css('visibility', 'hidden');
-		}
 
 		if (completion_code != null && completion_code != false) {
 			$('body').append('<div><span id="gameover">Gameover!</span> Completion code: ' + completion_code + '</div>');
@@ -112,17 +113,15 @@ $(function() {
 		}
 	}
 
-	var display_state = function(uid, score, reward, game, trial, next_game_bool, completion_code, scores=[], next_turn_uid, room_id, chosen_arm, is_observable, partner_is_observable, experimental_condition) {
-		console.log('display_state', reward, next_turn_uid)
+	var display_state = function(uid, score, reward, game, trial, next_game_bool, completion_code, scores, next_turn_uid, room_id, chosen_arm, is_observable, partner_is_observable, experimental_condition) {
+		console.log('display_state: scores are', scores, '// score for me is', score, '// can i see?', is_observable, '// can my partner see?', partner_is_observable)
 		$('#turn_uid').css('visibility', 'visible');
 
 		// Your turn
 		if (next_turn_uid == uid) {
-			console.log('it\'s my turn');
 			display_enabled_state(reward);
 		// Partner's turn
 		} else {
-			console.log('it\'s my partner\'s turn');
 			display_disabled_state(reward);
 		}
 
@@ -132,9 +131,7 @@ $(function() {
 
 	var processing = false;
 	var choose_arm = function(id) {
-		console.log('choosing arm');
 		if (processing == false) {
-			console.log('actually processing')
 			processing = true;
 			$.getJSON($SCRIPT_ROOT + '/_choose_arm', {
 				k: id
@@ -142,13 +139,10 @@ $(function() {
 				if ($("#gameover").length != 0) {
 					return;
 				} else {				
-					console.log('choose arm');
-
 					display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool, data.completion_code, data.scores, data.next_turn_uid, data.room_id, data.chosen_arm, data.is_observable, data.partner_is_observable, data.experimental_condition);
 
 					if (data.next_turn_uid != data.uid) {
 						// Poll server for partner completing turn
-						console.log('ping', ping)
 						ping = setInterval(function() {ping_server(data.uid, data.room_id)}, 1000);
 					}
 					processing = false;
@@ -158,12 +152,10 @@ $(function() {
 	};
 
 	if (typeof vars !== 'undefined') {
-		console.log('regular vars');
 		display_state(vars.uid, vars.score, vars.reward, vars.game, vars.trial, vars.next_game_bool, vars.completion_code, vars.scores, vars.next_turn_uid, vars.room_id, vars.chosen_arm, vars.is_observable, vars.partner_is_observable, vars.experimental_condition);
 		
 		// Poll server for partner completing turn
 		if (vars.next_turn_uid != vars.uid) {
-			console.log('ping', ping)
 			ping = setInterval(function() {ping_server(vars.uid, vars.room_id)}, 1000);
 		}
 	}

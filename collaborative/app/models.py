@@ -43,24 +43,24 @@ class Room(db.Model):
 
 	p1_score = db.Column(db.Integer())
 	p1_is_observable = db.Column(db.Boolean())
-	p1_scores = db.Column(ScalarListType(int))
+	p1_scores_strs = db.Column(db.String(1024))
 
 	p2_score = db.Column(db.Integer())
 	p2_is_observable = db.Column(db.Boolean())
-	p2_scores = db.Column(ScalarListType(int))
+	p2_scores_strs = db.Column(db.String(1024))
 
 	# True scores for each game w/ full observability
 	score = db.Column(db.Integer())
-	scores = db.Column(ScalarListType(int))
+	scores_strs = db.Column(db.String(1024))
 	experimental_condition = db.Column(db.String(512))
 
 	def __repr__(self):
 		return "<Room {} with {} and {}, next turn is player {}, \
 			last move at time {}, chosen arm {}, on game {}, trial {}, reward {},\
-			next game? {}, completion code {}>"\
+			completion code {}>"\
 			.format(self.id, self.p1_uid, self.p2_uid, self.next_turn_uid, 
 				self.time_last_move, self.chosen_arm, self.game, self.trial, self.reward,
-				self.next_game_bool, self.completion_code)
+				self.completion_code)
 
 
 db.create_all()

@@ -35,7 +35,7 @@ $(function() {
 	};
 
 	var choose_arm = function(id, uid) {
-		$.getJSON($SCRIPT_ROOT + '/_choose_arm', {
+		$.getJSON($SCRIPT_ROOT + '/_choose_arm_single', {
 			k: id
 		}, function(data) {
 			if ($('#nextbutton').length != 0) {
