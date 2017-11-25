@@ -11,19 +11,19 @@
 	  var vars = {{ vars|tojson|safe }};
 	</script>
 	<span id="game_wrapper" class="wrapper">Game <span id="game">1</span> of 20</span>
-	<span id="trial_wrapper" class="wrapper">Trial <span id="trial">1</span> of 15</span>
+	<span id="trial_wrapper" class="wrapper">Round <span id="trial">1</span> of 15</span>
 	<p>
 		<button type="button" class="button-1 choice" id="1">Choice 1</button>
 		<button type="button" class="button-2 choice" id="2">Choice 2</button>
 		<button type="button" class="button-3 choice" id="3">Choice 3</button>
 		<button type="button" class="button-4 choice" id="4">Choice 4</button>
 	</p>
-	<div id="reward_observed" style="visibility: hidden;"><span id="past_turn_uid">You/Your partner</span> got <span id="reward">0 or 1</span> point for Choice <span id="chosen_arm"></span></div>
-	<div id="reward_unobserved" style="visibility: hidden;">You cannot see this reward.</div>
+	<div><span id="past_turn_uid">You/Your partner</span> chose Choice <span id="chosen_arm"></span>.</div>
+	</br>	
+	<div>Point given: <span id="reward">0 or 1</span> | <span id="partner_observation"></span></div>
 
-	<div id="partner_observed_wrapper" style="visibility: hidden;">Your partner <span id="partner_observed">can/cannot</span> see this reward.</div>
-
-	<div>Turn: <span id="turn_uid" style="visibility: hidden;">you or your partner's</span></div>
+	</br></br>
+	<div>Turn: <span id="turn_uid"></span>.</div>
 	
 	<div id="score_wrapper" class="wrapper">Total points you have seen this game: <span id="score">0</span></div>
 

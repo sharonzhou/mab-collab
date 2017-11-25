@@ -21,6 +21,7 @@ def check_partner_move():
 
 	# Check whose turn it is in the room
 	room = Room.query.get(session['room_id'])
+	session['timeout'] = False
 	turn = room.next_turn_uid
 	session['next_turn_uid'] = turn
 
@@ -34,12 +35,20 @@ def check_partner_move():
 		if room.p1_uid == session['uid']:
 			session['scores'] = room.p1_scores
 			session['score'] = room.p1_score
+			session['is_observable'] = room.p1_is_observable
+			session['partner_is_observable'] = room.p2_is_observable
 		else:
 			session['scores'] = room.p2_scores
 			session['score'] = room.p2_score
+			session['is_observable'] = room.p2_is_observable
+			session['partner_is_observable'] = room.p1_is_observable
+	else:
+		# Partner's turn: check if they dropped out
+		# TODO: check/test this inequality...
+		if room.time_last_move < datetime.utcnow() - timedelta(minutes=2):
+			session['timeout'] = True
+			# Clear partner session? TODO...
 
-		# TODO: partial observability: update session score appropriately
-	
 	session_vars = {}
 	for k, v in session.items():
 		session_vars[k] = v	
@@ -78,25 +87,72 @@ def give_reward():
 		# Set default session vars
 		session['completion_code'] = None
 
-		# Record user's choice and reward to db, for trials within scope (don't record accidental requests from spamming keys)
-		if trial <= MAX_TRIALS:
-			# TODO: partial observability: update score in Move DB (have a observed flag nullable=T), but not in session var...
-			score += reward
-			session['score'] = score
-			print('my score updated to be', score, reward)
-			# TODO: this score is updating weird
-			move = Move(uid=uid, chosen_arm=chosen_arm, trial=trial, game=game, reward=reward, score=score)
-			print('stored', move)
-			db.session.add(move)
-			db.session.commit()
-
-		# If playing double, update room
+		# Collaborative setting: update room
 		if 'room_id' in session and session['room_id'] != 0:
-			# End or next game
-			reset = False
-			if session['trial'] >= MAX_TRIALS:
+			room = Room.query.get(session['room_id'])
+			if "experimental_condition" not in session:
+				session['experimental_condition'] = room.experimental_condition
+			p1_observability, p2_observability = experimental_conditions[session['experimental_condition']]
+			
+			is_p1 = True
+			if session['uid'] == room.p2_uid:
+				is_p1 = False
+			if is_p1:
+				room.next_turn_uid = room.p2_uid
+				session['next_turn_uid'] = room.p2_uid
+			else:				
+				room.next_turn_uid = room.p1_uid
+				session['next_turn_uid'] = room.p1_uid
+
+			# Record user's choice and reward to db, for trials within scope (don't record accidental requests from spamming keys)
+			if trial <= MAX_TRIALS:
+				# Observability for this past trial
+				if is_p1:
+					is_observable = bool(p1_observability[game - 1][trial - 1])
+					partner_is_observable = bool(p2_observability[game - 1][trial - 1])
+				else:
+					is_observable = bool(p2_observability[game - 1][trial - 1])
+					partner_is_observable = bool(p1_observability[game - 1][trial - 1])
+
+				p1_is_observable = bool(p1_observability[game - 1][trial - 1])
+				p2_is_observable = bool(p2_observability[game - 1][trial - 1])
+				room.p1_is_observable = p1_is_observable
+				room.p2_is_observable = p2_is_observable
+				p1_score = room.p1_score
+				p2_score = room.p2_score
+				p1_score = p1_score + reward if p1_is_observable else p1_score
+				p2_score = p2_score + reward if p2_is_observable else p2_score
+				room.p1_score = p1_score
+				room.p2_score = p2_score
+
+				if is_p1:
+					session['is_observable'] = p1_is_observable
+					session['partner_is_observable'] = p2_is_observable
+					session['score'] = p1_score
+				else:
+					session['is_observable'] = p2_is_observable
+					session['partner_is_observable'] = p1_is_observable
+					session['score'] = p2_score
+
+				move = Move(uid=uid, chosen_arm=chosen_arm, trial=trial, game=game, reward=reward, score=score, is_observable=session['is_observable'])
+				print('stored', move)
+				db.session.add(move)
+				db.session.commit()
+				# TODO: check if after committing, if we have to requery room
+				
+				# Update true score
+				true_score = room.score + reward
+				room.score = true_score
+
+				# Finished game; record score under scores 
 				if trial == MAX_TRIALS:
-					session['scores'].append(score)
+					session['scores'].append(session['score'])
+					room.p1_scores.append(p1_score)
+					room.p2_scores.append(p2_score)
+					room.scores.append(true_score)
+
+			# Finished game (or over)
+			if trial >= MAX_TRIALS:
 				if game >= MAX_GAMES:
 					# Give completion code
 					x = session['amt_id'][-1]
@@ -104,68 +160,41 @@ def give_reward():
 					session['completion_code'] = code
 
 					# Store value in room for partner to query
-					room = Room.query.get(session['room_id'])
 					room.completion_code = code
 					db.session.commit()
 				else:
-					reset = True
-					session['score'] = 0
 					session['trial'] = 1
 					session['game'] += 1
 					session['reward'] = None
 					session['chosen_arm'] = None
 
-			# Switch to partner's turn; update scores
-			room = Room.query.get(session['room_id'])
-			if room.p1_uid == session['uid']:
-				room.next_turn_uid = room.p2_uid
-				session['next_turn_uid'] = room.p2_uid
+					session['score'] = 0
+					room.score = session['score']
+					
+					# Reset observability
+					is_observable = bool(p1_observability[session['game'] - 1][0]) if session['uid'] == room.p1_uid else bool(p2_observability[session['game'] - 1][0])
+					session['is_observable'] = is_observable
 
-				room.p1_scores = session['scores']
-				room.p1_score = session['score']
-
-				# Partner's score update
-				# TODO: partial observability
-				if trial <= MAX_TRIALS:
-					room.p2_score += reward
-					print('i am p1: partner p2 score updated to be', room.p2_score, reward, session['uid'])
-					if trial == MAX_TRIALS:
-						partner_scores = room.p2_scores
-						partner_scores.append(room.p2_score)
-						room.p2_scores = partner_scores
-			else:
-				room.next_turn_uid = room.p1_uid
-				session['next_turn_uid'] = room.p1_uid
-
-				room.p2_scores = session['scores']
-				room.p2_score = session['score']
-
-				# Partner's score update
-				# TODO: partial observability
-				if trial <= MAX_TRIALS:
-					room.p1_score += reward
-					print('i am p2: partner p1 score updated to be', room.p1_score, reward, session['uid'])
-					if trial == MAX_TRIALS:
-						partner_scores = room.p1_scores
-						partner_scores.append(room.p1_score)
-						room.p1_scores = partner_scores
-			# TODO: partial observability
-			if reset:
-				room.p1_score = session['score']
-				room.p2_score = session['score']
 			room.time_last_move = datetime.utcnow()
 			room.chosen_arm = session['chosen_arm']
 			room.reward = session['reward']
 			room.trial = session['trial']
 			room.game = session['game']
-			room.completion_code = session['completion_code']
 			db.session.commit()
+		# Single player
 		else:
+			# Record user's choice and reward to db, for trials within scope (don't record accidental requests from spamming keys)
+			if trial <= MAX_TRIALS:
+				score += reward
+				session['score'] = score
+				move = Move(uid=uid, chosen_arm=chosen_arm, trial=trial, game=game, reward=reward, score=score)
+				db.session.add(move)
+				db.session.commit()
 			session['next_game_bool'] = False
 			if trial >= MAX_TRIALS:
 				session['next_game_bool'] = True
-	else:
-		# Requery state b/c of repeated requests
+	# Requery state b/c of repeated requests (collaborative setting only) 
+	elif 'room_id' in session and session['room_id'] != 0:
 		print('avoided duplicating', session)
 		room = Room.query.get(session['room_id'])
 		if room.p1_uid == session['uid']:
@@ -257,12 +286,17 @@ def check_waiting_room():
 				# Create next room
 				partner_uid = partner.id
 				timestamp = datetime.utcnow()
-				first_turn_uid = user.id if random.random() < .5 else partner_uid
-				session['next_turn_uid'] = first_turn_uid
+				
+				# Don't randomize as this changes controlloing observability across pairs
+				session['next_turn_uid'] = user.id
+				
+				experimental_condition = random.choice(list(experimental_conditions.keys()))
+				session['experimental_condition'] = experimental_condition
 
-				room = Room(next_turn_uid=first_turn_uid, p1_uid=user.id, p2_uid=partner_uid, \
+				room = Room(next_turn_uid=user.id, p1_uid=user.id, p2_uid=partner_uid, \
 					time_last_move=timestamp, chosen_arm=-1, trial=1, game=1, reward=None, \
-					completion_code=None, p1_score=0, p2_score=0, p1_scores=[], p2_scores=[])
+					completion_code=None, p1_score=0, p2_score=0, p1_scores=[], p2_scores=[], \
+					experimental_condition=experimental_condition, score=0, scores=[])
 				db.session.add(room)
 				db.session.commit()
 

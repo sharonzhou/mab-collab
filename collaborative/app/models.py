@@ -20,6 +20,7 @@ class Move(db.Model):
 	game = db.Column(db.Integer())
 	reward = db.Column(db.Integer())
 	score = db.Column(db.Integer())
+	is_observable = db.Column(db.Boolean())
 
 	def __repr__(self):
 		return "<Move {} by {} on arm {} for game {} trial {} with reward {} and score {}>"\
@@ -32,16 +33,26 @@ class Room(db.Model):
         nullable=False)
 	p2_uid = db.Column(db.Integer(), db.ForeignKey("worker.id"),
         nullable=False)
+
 	time_last_move = db.Column(db.DateTime())
 	chosen_arm = db.Column(db.Integer())
 	trial = db.Column(db.Integer())
 	game = db.Column(db.Integer())
 	reward = db.Column(db.Integer())
 	completion_code = db.Column(db.String(1024))
+
 	p1_score = db.Column(db.Integer())
-	p2_score = db.Column(db.Integer())
+	p1_is_observable = db.Column(db.Boolean())
 	p1_scores = db.Column(ScalarListType(int))
+
+	p2_score = db.Column(db.Integer())
+	p2_is_observable = db.Column(db.Boolean())
 	p2_scores = db.Column(ScalarListType(int))
+
+	# True scores for each game w/ full observability
+	score = db.Column(db.Integer())
+	scores = db.Column(ScalarListType(int))
+	experimental_condition = db.Column(db.String(512))
 
 	def __repr__(self):
 		return "<Room {} with {} and {}, next turn is player {}, \

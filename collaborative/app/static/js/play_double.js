@@ -21,45 +21,41 @@ $(function() {
 			uid: uid,
 			room_id: room_id
 		}, function(data) {
-			console.log('did partner move?', data.next_turn_uid, data.uid)
+			// Partner still going
 			if (data.next_turn_uid != data.uid) {
-				console.log('nope still waiting')
 				display_disabled_state(data.reward)
-				display_common_state(data.trial, data.game, data.score, data.chosen_arm, data.reward, data.completion_code, data.scores);
+				display_common_state(data.trial, data.game, data.score, data.chosen_arm, data.reward, data.completion_code, data.scores, data.is_observable, data.partner_is_observable, data.experimental_condition);
+			// Partner dropped out of game
+			} else if (data.timeout == true) {
+				// Clear partner's session? on server side, send something to room var?
+				// TODO
+				console.log('partner dropped out')
+			// Your turn now
 			} else {
-				console.log('should clear interval....')
 				window.clearInterval(ping);
-				display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool, data.completion_code, data.scores, data.next_turn_uid, data.room_id, data.chosen_arm);
+				display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool, data.completion_code, data.scores, data.next_turn_uid, data.room_id, data.chosen_arm, data.is_observable, data.partner_is_observable, data.experimental_condition);
 			}
 		});   
 	}
 
 	var display_enabled_state = function(reward) {
-		// Enable buttons; display your turn, partner's past turn arm & reward #TODO: partial observability
+		// Enable buttons; display your turn, partner's past turn arm & reward, if observable
 		$('.choice').prop("disabled", false);
 		$('.choice').removeClass("disabled");
 		$('.choice').one('click', function(){ $(this).prop("disabled", true); choose_arm(this.id) });
 		$('#turn_uid').text('You');
 		$('#past_turn_uid').text('Your partner');
-		// TODO: for partial observability - and toggle the divs
-		if (reward != null) {
-			$('#reward_observed').css('visibility', 'visible');
-		}
 	};
 
 	var display_disabled_state = function(reward) {
-		// Disable buttons; display partner's turn, your past turn arm & reward #TODO: partial observability
+		// Disable buttons; display partner's turn, your past turn arm & reward
 		$('.choice').prop("disabled", true);			
 		$('.choice').addClass("disabled");
 		$('#turn_uid').text('Your partner');
 		$('#past_turn_uid').text('You');
-		// TODO: for partial observability - and toggle the divs
-		if (reward != null) {
-			$('#reward_observed').css('visibility', 'visible');
-		}	
 	};
 
-	var display_common_state = function(trial, game, score, chosen_arm, reward, completion_code, scores) {
+	var display_common_state = function(trial, game, score, chosen_arm, reward, completion_code, scores, is_observable, partner_is_observable, experimental_condition) {
 		$('#game').text(game);
 		if (trial > 15) {
 			trial = 15
@@ -68,20 +64,38 @@ $(function() {
 		$('#score').text(score);
 		$('#chosen_arm').text(chosen_arm);
 
-		if (reward == 1) {
-			$('#reward').text(reward);
-			$('#reward').css('color', '#2c7bb6');
-		} else if (reward == 0) {
-			$('#reward').text(reward);
-			$('#reward').css('color', '#d7191c');
+		console.log('can my partner see?', partner_is_observable, '// can i see?', is_observable)
+		if (reward != null || is_observable != null || partner_is_observable != null) {
+			if (is_observable == true) {
+				if (reward == 1) {
+					$('#reward').text(reward);
+					$('#reward').css('color', '#2c7bb6');
+				} else if (reward == 0) {
+					$('#reward').text(reward);
+					$('#reward').css('color', '#d7191c');
+				} 
+			} else {
+				$('#reward').text('hidden');
+				$('#reward').css('color', '#d3d3d3');
+			}
+
+			if (experimental_condition != 'control') {
+				if (partner_is_observable == true) {
+					$('#partner_observation').text('Your partner sees this.');
+				} else {
+					$('#partner_observation').text('Hidden from your partner.');
+				}
+			}
+
 		} else {
-			$('#reward').text('0 or 1');
-			$('#reward').css('color', 'black');
+			$('#reward_unobserved').css('visibility', 'hidden');
+			$('#reward_observed').css('visibility', 'hidden');
+			$('#partner_observed').css('visibility', 'hidden');
+			$('#partner_unobserved').css('visibility', 'hidden');
 		}
 
 		if (trial == 1 && game != 1) {
 			$('#new_game_text').css('visibility', 'visible');
-			$('#reward_observed').css('visibility', 'hidden');
 		} else {
 			$('#new_game_text').css('visibility', 'hidden');
 		}
@@ -98,7 +112,7 @@ $(function() {
 		}
 	}
 
-	var display_state = function(uid, score, reward, game, trial, next_game_bool, completion_code, scores=[], next_turn_uid, room_id, chosen_arm) {
+	var display_state = function(uid, score, reward, game, trial, next_game_bool, completion_code, scores=[], next_turn_uid, room_id, chosen_arm, is_observable, partner_is_observable, experimental_condition) {
 		console.log('display_state', reward, next_turn_uid)
 		$('#turn_uid').css('visibility', 'visible');
 
@@ -112,7 +126,7 @@ $(function() {
 			display_disabled_state(reward);
 		}
 
-		display_common_state(trial, game, score, chosen_arm, reward, completion_code, scores);
+		display_common_state(trial, game, score, chosen_arm, reward, completion_code, scores, is_observable, partner_is_observable, experimental_condition);
 
 	};
 
@@ -130,7 +144,7 @@ $(function() {
 				} else {				
 					console.log('choose arm');
 
-					display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool, data.completion_code, data.scores, data.next_turn_uid, data.room_id, data.chosen_arm);
+					display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool, data.completion_code, data.scores, data.next_turn_uid, data.room_id, data.chosen_arm, data.is_observable, data.partner_is_observable, data.experimental_condition);
 
 					if (data.next_turn_uid != data.uid) {
 						// Poll server for partner completing turn
@@ -145,7 +159,7 @@ $(function() {
 
 	if (typeof vars !== 'undefined') {
 		console.log('regular vars');
-		display_state(vars.uid, vars.score, vars.reward, vars.game, vars.trial, vars.next_game_bool, vars.completion_code, vars.scores, vars.next_turn_uid, vars.room_id, vars.chosen_arm);
+		display_state(vars.uid, vars.score, vars.reward, vars.game, vars.trial, vars.next_game_bool, vars.completion_code, vars.scores, vars.next_turn_uid, vars.room_id, vars.chosen_arm, vars.is_observable, vars.partner_is_observable, vars.experimental_condition);
 		
 		// Poll server for partner completing turn
 		if (vars.next_turn_uid != vars.uid) {
