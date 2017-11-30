@@ -122,7 +122,7 @@ $(function() {
 		}
 
 		// Show completion code
-		if (completion_code != null && completion_code != false) {
+		if (completion_code != null && completion_code != false && !$('#gameover').length) {
 			$('body').append('<div><span id="gameover">Gameover!</span> Completion code: ' + completion_code + '</div>');
 		};
 
