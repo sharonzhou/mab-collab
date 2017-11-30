@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block head %}
+	{{ super() }}
+	<script async type=text/javascript src="{{
+		url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+	<script async type="text/javascript">
+	  var vars = {{ vars|tojson|safe }};
+	</script>
+	<div id="partner_out_wrapper">
+	<h1>We're so sorry...</h1> 
+	<div>Your partner decided to drop out. 
+		<br>Here's a completion code to compensate your participation. 
+		</div>
+	<br>
+	<div>{{ vars.timeout_code }}</div>
+	<br>
+	<div>Thank you for understanding.</div>
+	</div>
+{% endblock %}
