@@ -197,7 +197,7 @@ def give_reward():
 					session['completion_code'] = create_completion_code(session['amt_id'], 'completed')
 
 					# Store value in room for partner to query
-					room.completion_code = code
+					room.completion_code = session['completion_code']
 					db.session.commit()
 				else:
 					session['next_game_bool'] = True

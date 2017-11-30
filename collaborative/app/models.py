@@ -1,5 +1,4 @@
 from app import db
-from sqlalchemy_utils import ScalarListType
 
 class Worker(db.Model):
 	id = db.Column(db.Integer(), primary_key=True)
