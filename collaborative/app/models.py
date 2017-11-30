@@ -7,6 +7,7 @@ class Worker(db.Model):
 	room_id = db.Column(db.Integer(), nullable=True)
 	is_ready = db.Column(db.Boolean())
 	last_active = db.Column(db.DateTime())
+	timeout = db.Column(db.Boolean())
 
 	def __repr__(self):
 		return "<User {}: {}>".format(self.id, self.amt_id)
@@ -39,6 +40,7 @@ class Room(db.Model):
 	trial = db.Column(db.Integer())
 	game = db.Column(db.Integer())
 	reward = db.Column(db.Integer())
+	next_game_bool = db.Column(db.Boolean())
 	completion_code = db.Column(db.String(1024))
 
 	p1_score = db.Column(db.Integer())
@@ -53,14 +55,13 @@ class Room(db.Model):
 	score = db.Column(db.Integer())
 	scores_strs = db.Column(db.String(1024))
 	experimental_condition = db.Column(db.String(512))
-
 	def __repr__(self):
 		return "<Room {} with {} and {}, next turn is player {}, \
 			last move at time {}, chosen arm {}, on game {}, trial {}, reward {},\
-			completion code {}>"\
+			next game bool {}, completion code {}>"\
 			.format(self.id, self.p1_uid, self.p2_uid, self.next_turn_uid, 
 				self.time_last_move, self.chosen_arm, self.game, self.trial, self.reward,
-				self.completion_code)
+				self.next_game_bool, self.completion_code)
 
 
 db.create_all()

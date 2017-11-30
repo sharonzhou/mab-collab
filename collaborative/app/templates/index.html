@@ -7,14 +7,23 @@
 {% endblock %}
 
 {% block body %}
+	<div id="index_wrapper">
 	<h1>Welcome!</h1> 
-	<div><b>Instructions:</b> You will do 1 practice round of the game by yourself (does not count toward final score). Then, we'll pair you with a partner (this counts :)).</div>
-	</br> 
-	<div>In the game, you will choose between <b>4 choices</b> in each round. Each choice has a <b>different chance of getting 1 point or no points</b>. You will play 15 rounds (aka. make 15 choices) for each game. These chances are reset to something different at the beginning of a game. The goal is to get the most points with your partner.</div>
-	</br>
-	<div>Each game has 15 rounds that will each take 1min max. You will play 20 games with your partner, and 1 practice round by yourself.</div>
-	</br>
+	<h3><b>Instructions:</b></h3>
+	<div>You will choose between <b>4 choices</b>.
+		<br>Each choice has a <b>different chance of getting 1 point or 0 points</b>.
+		<br><br>You will make 15 choices (rounds) in each game. You will have 20 seconds per choice. 
+		<br>These chances are the same for a game, but <b>reset</b> for the next game. 
+		<br>The goal is to get the most points with your partner.
+	</div>
+	<br>
+	<div>You will play 20 games with your partner.
+		<br>Let's start with 1 practice round by yourself. This doesn't count and has no time limit, just to understand the game.
+	</div>
+	<br>
 	<div>Please submit your Worker ID to begin:</div>
+	<br>
 	<input id="amt_id" type="text">
 	<input id="start" type="submit">
+	</div>
 {% endblock %}

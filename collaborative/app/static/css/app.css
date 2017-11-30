@@ -1,5 +1,20 @@
+/*Games are centered; instructions and waiting rooms are aligned left for ease of reading*/
+
+body {
+	font-family: Palatino;
+	text-align: center;
+	margin: 40px;
+}
+
+#index_wrapper, #wait_wrapper {
+	text-align: left;
+}
+
+/*Table*/
+
 table {
 	border-collapse: collapse;
+	margin-top: 20px;
 }
 
 th, td {
@@ -11,68 +26,69 @@ th {
 	border-bottom: 1px solid black;
 }
 
-#score_wrapper, #gameover {
-	font-weight: bold;
-	font-size: 18px;
+#table {
+	margin-top: 40px;
 }
 
+/*Score and Completion Code info*/
+
 #gameover {
+	font-weight: bold;
+	font-size: 18px;
 	margin-top: 20px;
+}
+
+/*Trial, Game, and Turn info */
+#trial_wrapper {
+	padding-left: 50px;
 }
 
 #trial, #game {
 	text-decoration: underline;
 }
 
-#reward_wrapper, #score_wrapper {
-	margin-bottom: 20px;
-	margin-left: 25%;
+#turn_uid_wrapper, #chosen_arm_wrapper, #points_information_box {
+	margin-top: 25px;
 }
 
-#reward, #score {
-	border-style: solid;
-	border-width: 4px;
-	padding: 3px 5px;
+/*Chosen arm matching button*/
+
+#chosen_arm_highlight {
+	padding: 5px;
+	border-radius: 2px;
 }
 
-.disabled {
-	background-color: #d3d3d3 !important;
+/*Small text in Points*/
+#partner_observation_wrapper, #score_subtext {
+	font-size: 10;
 }
 
-.disabled:hover {
-	opacity: 1;
+#partner_is_observable_style {
+	text-decoration: underline;
 }
 
-.button-1 {
-	background-color: #d7191c;
+/*Points information*/
+
+#points_information_box {
+	border: 2px;
+	text-align: center;
 }
 
-.button-2 {
-	background-color: #fdae61;
+#points_information {
+	text-align: left;
+	display: inline-block;
+	padding: 20px;
+    border: 3px solid black;
+    border-radius: 2px;
 }
 
-.button-3 {
-	background-color: #abd9e9;
-}
-
-.button-4 {
-	background-color: #2c7bb6;
-}
-
-#trial_wrapper {
-	padding-left: 50px;
-}
-
-body {
-	font-family: Palatino;
-	margin-left: 50px;
-}
+/*Buttons*/
 
 #nextbutton {
+	margin: 20px;
 	padding: 8px 12px;
-	background: darkblue;
+	background: midnightblue;
 	font-size: 14px;
-	margin-left: 25%;
 }
 
 .choice {
@@ -115,5 +131,71 @@ button:active {
 	-webkit-box-shadow: 3px 3px 0px #6a6a5e;
 	-moz-box-shadow: 3px 3px 0px #6a6a5e;
 	box-shadow: 3px 3px 0px #6a6a5e;
+}
+
+.disabled {
+	background-color: #d3d3d3 !important;
+}
+
+.disabled:hover {
+	opacity: 1;
+}
+
+.button-1 {
+	background-color: #d7191c;
+}
+
+.button-2 {
+	background-color: #fdae61;
+}
+
+.button-3 {
+	background-color: #abd9e9;
+}
+
+.button-4 {
+	background-color: #2c7bb6;
+}
+
+/*Overlay*/
+#overlay_observability {
+	font-size: 18;
+}
+
+.overlay {
+    /* Height & width depends on how you want to reveal the overlay (see JS below) */    
+    height: 100%;
+    width: 0;
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    background-color: rgb(0,0,0); /* Black fallback color */
+    background-color: rgba(0,0,0, 0.9); /* Black w/opacity */
+    overflow-x: hidden; /* Disable horizontal scroll */
+    transition: 0.5s; /* 0.5 second transition effect to slide in or slide down the overlay (height or width, depending on reveal) */
+}
+
+/* Position the content inside the overlay */
+.overlay_content {
+    position: relative;
+    top: 25%; /* 25% from the top */
+    width: 100%; /* 100% width */
+    text-align: center; /* Centered text/links */
+    margin-top: 30px; /* 30px top margin to avoid conflict with the close button on smaller screens */
+}
+
+/* The navigation links inside the overlay */
+.overlay div {
+    padding: 8px;
+    text-decoration: none;
+    font-size: 20pt;
+    color: white;
+    display: block; /* Display block instead of inline */
+}
+
+/* When the height of the screen is less than 450 pixels, change the font-size of the links and position the close button again, so they don't overlap */
+@media screen and (max-height: 450px) {
+    .overlay div {font-size: 14px}
 }
 

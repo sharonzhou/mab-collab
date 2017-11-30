@@ -9,8 +9,10 @@
 	<script async type="text/javascript">
 	  var vars = {{ vars|tojson|safe }};
 	</script>
+	<div id="wait_wrapper">
 	<h1>Waiting Room</h1>
 	<div id="waiting_text">Good job on the practice round! We're pairing you with a partner.</div> 
+	<div id="experimental_condition_text"></div>
 	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
 	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
 	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
@@ -23,5 +25,6 @@
 	</br></br>
 	<div><b>Wait time</b>:</div>
 	</br>
-	<div>You've been waiting for <span id="timer">0min 0s</span>. If you wait more than 20min, we'll compensate you the waiting time amount, for which you'll see a completion code.</div>
+	<div>You've been waiting for <span id="timer">0min 0s</span>. If you wait more than 10min, we'll compensate you the waiting time amount, for which you'll see a completion code.</div>
+	</div>
 {% endblock %}

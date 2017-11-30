@@ -12,21 +12,37 @@
 	</script>
 	<span id="game_wrapper" class="wrapper">Game <span id="game">1</span> of 20</span>
 	<span id="trial_wrapper" class="wrapper">Round <span id="trial">1</span> of 15</span>
+	<div id="experimental_condition_text"></div>
+
+	<div id="turn_uid_wrapper">Turn: <span id="turn_uid"></span></div>
 	<p>
 		<button type="button" class="button-1 choice" id="1">Choice 1</button>
 		<button type="button" class="button-2 choice" id="2">Choice 2</button>
 		<button type="button" class="button-3 choice" id="3">Choice 3</button>
 		<button type="button" class="button-4 choice" id="4">Choice 4</button>
 	</p>
-	<span id="turn_information">
-		<div><span id="past_turn_uid">You/Your partner</span> chose Choice <span id="chosen_arm"></span>.</div>
-		</br>	
-		<div>Point given: <span id="reward">0 or 1</span> | <span id="partner_observation"></span></div>
-	</span>
-	</br></br>
-	<div>Turn: <span id="turn_uid"></span>.</div>
-	
-	<div id="score_wrapper" class="wrapper">Total points you have seen this game: <span id="score">0</span></div>
-	</br>
+	<div id="chosen_arm_wrapper" class="turn_information"><span id="past_turn_uid">You/Your partner</span> chose <span id="chosen_arm_highlight">Choice <span id="chosen_arm"></span></span></div>
+	<br>
+	<div id="points_information_box">
+		<div id="points_information">
+			<div id="reward_wrapper" class="turn_information"><b>Point</b>: <span id="reward">0 or 1</span></div>
+			<div id="partner_observation_wrapper" class="turn_information">(<span id="partner_observation"></span>)</div>
+			<br>
+			<div id="score_wrapper" class="wrapper"><b>Total points:</b> <span id="score">0</span></div>
+			<div id="score_subtext">(you have seen this game)</div>
+		</div>
+	</div>
+
 	<div id="table">Points per game:</div>
+
+	<!-- Overlay for each game's overview -->
+	<div id="overlay_gameover" class="overlay">
+		<div class="overlay_content">
+			<div>— Overview for Game <span id="overlay_game"></span> —</div>
+
+			<h1>Score: <span id="overlay_score"></span></h1>
+			<div id=overlay_observability>(seen overall)</div>
+			<div id="nextbutton_wrapper"></div>
+		</div>
+	</div>
 {% endblock %}
