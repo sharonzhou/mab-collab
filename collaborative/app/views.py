@@ -173,32 +173,33 @@ def give_reward():
 				# Finished game; record score under scores 
 				if trial == MAX_TRIALS:
 					true_scores = json.loads(room.scores_strs)
-					print('true scores unupdated are', true_scores)
 					true_scores.append(true_score)
-					print('true scores are w/ appended true score', true_scores, true_score)
 					session['scores'] = true_scores
 					room.scores_strs = json.dumps(true_scores)
-					print("choose arm max trials - scores", session['scores'], json.loads(room.scores_strs), true_scores)
 					
 					# Saving this to db for quick glance qualitative analysis, but display true scores to p1 & p2
 					p1_scores = json.loads(room.p1_scores_strs)
 					p1_scores.append(p1_score)
-					room.p1_scores = json.dumps(p1_scores)
+					room.p1_scores_strs = json.dumps(p1_scores)
+					
 					p2_scores = json.loads(room.p2_scores_strs)
 					p2_scores.append(p2_score)
 					room.p2_scores_strs = json.dumps(p2_scores)
-					print('updated p1 and p2 scores....', json.loads(room.p1_scores_strs), json.loads(room.p2_scores_strs))
+
+					print('updated true scores, p1 and p2 scores....', json.loads(room.scores_strs), json.loads(room.p1_scores_strs), json.loads(room.p2_scores_strs))
 					db.session.commit()
 
 			# Finished game (or over)
 			if trial >= MAX_TRIALS:
 				if game >= MAX_GAMES:
-					# Give completion code
-					session['completion_code'] = create_completion_code(session['amt_id'], 'completed')
-
-					# Store value in room for partner to query
-					room.completion_code = session['completion_code']
-					db.session.commit()
+					# Give completion code, storing value in room for partner to query
+					if not room.completion_code:
+						code = create_completion_code(session['amt_id'], 'completed')
+						room.completion_code = code
+						db.session.commit()
+					else:
+						code = room.completion_code 
+					session['completion_code'] = code
 				else:
 					session['next_game_bool'] = True
 			room.time_last_move = datetime.utcnow()
@@ -314,29 +315,50 @@ def make_timeout_completion_code():
 def advance_next_game():
 	if 'uid' in session and 'room_id' in session and 'game' in session:
 		room = Room.query.get(session['room_id'])
-
-		session['next_game_bool'] = False
-		session['trial'] = 1
-		session['game'] = room.game + 1
-		session['reward'] = None
-		session['chosen_arm'] = None
-		session['score'] = 0
+		last_move = Move.query.filter_by(uid=session['uid']).order_by(Move.id.desc()).first()
+		last_game = last_move.game 
+		next_game = last_game + 1
 
 		# Reset observability
 		p1_observability, p2_observability = experimental_conditions[session['experimental_condition']]
-		is_observable = bool(p1_observability[session['game'] - 1][0]) if session['uid'] == room.p1_uid else bool(p2_observability[session['game'] - 1][0])
+		if session['uid'] == room.p1_uid:
+			is_observable = bool(p1_observability[session['game'] - 1][0]) 
+			room.p1_is_observable = is_observable
+		else:
+			is_observable = bool(p2_observability[session['game'] - 1][0])
+			room.p2_is_observable = is_observable
 		session['is_observable'] = is_observable
 
-		room.score = 0
-		room.p1_score = 0
-		room.p2_score = 0
-		room.time_last_move = datetime.utcnow()
-		room.chosen_arm = session['chosen_arm']
-		room.reward = session['reward']
-		room.trial = session['trial']
-		room.game = session['game']
-		room.next_game_bool = False
-		db.session.commit()
+		# You advanced first
+		if room.game != next_game:
+			room.score = 0
+			room.p1_score = 0
+			room.p2_score = 0
+			room.time_last_move = datetime.utcnow()
+			room.chosen_arm = None
+			room.reward = None
+			room.trial = 1
+			room.game = last_game + 1
+			room.next_game_bool = False
+			db.session.commit()
+
+			session['next_game_bool'] = False
+			session['trial'] = 1
+			session['game'] = next_game
+			session['reward'] = None
+			session['chosen_arm'] = None
+			session['score'] = 0
+		# Partner advanced first and already started/chose an arm
+		else:
+			room.time_last_move = datetime.utcnow()
+			db.session.commit()
+
+			session['next_game_bool'] = room.next_game_bool
+			session['trial'] = room.trial
+			session['game'] = room.game
+			session['reward'] = room.reward
+			session['chosen_arm'] = room.chosen_arm
+			session['score'] = room.p1_score if session['uid'] == room.p1_uid else room.p2_score
 
 		return jsonify(session_to_dict(session))
 

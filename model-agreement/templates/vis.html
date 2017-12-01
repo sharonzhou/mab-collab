@@ -1,0 +1,77 @@
+{% block head %}
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script type="text/javascript">
+	  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+	</script>
+</head>
+{% endblock %}
+
+{% block body %}
+<body>
+	<h1>Dashboard</h1>
+	<a href="/kg">KG</a> <a href="/greedy">Greedy</a> <a href="/wsls">WSLS</a>
+
+	<h2>{{ model|upper }} Model Agreement Percentage in Single Interface</h2>
+	<div>{{ single_avg_agreement }}</div>
+	<table>
+		<tr>
+			<th>User #</th>
+			<th>Trial 1</th>
+			<th>Trial 2</th>
+			<th>Trial 3</th>
+			<th>Trial 4</th>
+			<th>Trial 5</th>
+			<th>Trial 6</th>
+			<th>Trial 7</th>
+			<th>Trial 8</th>
+			<th>Trial 9</th>
+			<th>Trial 10</th>
+			<th>Trial 11</th>
+			<th>Trial 12</th>
+			<th>Trial 13</th>
+			<th>Trial 14</th>
+			<th>Trial 15</th>
+		</tr>
+		{% for game in single_user_avg_agreement %}
+		<tr>
+			<td><a href="{{ '/human_actions/single/%s/%s'%(loop.index0,model) }}">User {{ loop.index0 }}</a></td>
+			{% for trial in game %}
+				<td>{{ trial | round(2) }}</td>
+			{% endfor %}
+		</tr>
+		{% endfor %}
+	</table>
+
+	<h2>{{ model|upper }} Model Agreement Percentage in Single Bars Interface</h2>
+	<div>{{ single_bars_avg_agreement }}</div>
+	<table>
+		<tr>
+			<th>User #</th>
+			<th>Trial 1</th>
+			<th>Trial 2</th>
+			<th>Trial 3</th>
+			<th>Trial 4</th>
+			<th>Trial 5</th>
+			<th>Trial 6</th>
+			<th>Trial 7</th>
+			<th>Trial 8</th>
+			<th>Trial 9</th>
+			<th>Trial 10</th>
+			<th>Trial 11</th>
+			<th>Trial 12</th>
+			<th>Trial 13</th>
+			<th>Trial 14</th>
+			<th>Trial 15</th>
+		</tr>
+		{% for game in single_bars_user_avg_agreement %}
+		<tr>
+			<td><a href="{{ '/human_actions/single_bars/%s/%s'%(loop.index0,model) }}">User {{ loop.index0 }}</a></td>
+			{% for trial in game %}
+				<td>{{ trial | round(2) }}</td>
+			{% endfor %}
+		</tr>
+		{% endfor %}
+	</table>
+</body>
+{% endblock %}
