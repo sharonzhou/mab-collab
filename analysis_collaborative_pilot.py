@@ -31,13 +31,20 @@ cursor.execute(query)
 rooms = cursor.fetchall()
 
 valid_worker_ids = [w[0] for w in workers if w[1] and w[1] != "testing"]
-print(valid_worker_ids)
+dropouts = [w[0] for w in workers if w[5]]
+print(valid_worker_ids, dropouts)
 
 avg_time = []
 for room in rooms:
-	print("Room", room[0])
 	p1_uid = room[2]
 	p2_uid = room[3]
+	experimental_condition = room[19]
+	scores = room[18]
+	if len(scores) < 20:
+		print("Dropping out Room", room[0], "with users", p1_uid, p2_uid, "and condition", experimental_condition)
+		continue
+
+	print("Room", room[0], "with users", p1_uid, p2_uid, "and condition", experimental_condition)
 	time_last_move = room[4]
 
 	query = "select last_active from worker where id =" + str(p1_uid) + ";"
@@ -50,5 +57,19 @@ for room in rooms:
 	last_active_p2 = cursor.fetchone()[0]
 	avg_time.append((time_last_move - last_active_p2).total_seconds())
 
-print(np.sum(avg_time) / len(avg_time) / 60.)
-# 9min task on average
+print("Average time on task: ", np.sum(avg_time) / len(avg_time) / 60.)
+# 10.5min task on average
+
+chosen_arms_p1 = [[] for _ in range(20)]
+chosen_arms_p2 = [[] for _ in range(20)]
+for m in moves:
+	if m[7] is None:
+		continue
+	game = m[4]
+	if m[1] == 35:
+		chosen_arms_p1[game - 1].append(m[2])
+	if m[1] == 34:
+		chosen_arms_p2[game - 1].append(m[2])
+print("P1", chosen_arms_p1)
+print("P2", chosen_arms_p2)
+
