@@ -34,19 +34,30 @@ valid_worker_ids = [w[0] for w in workers if w[1] and w[1] != "testing"]
 dropouts = [w[0] for w in workers if w[5]]
 print(valid_worker_ids, dropouts)
 
+condition_dropout_rate = { "control":[], "partial":[], "partial_asymmetric":[] }
+condition_game_scores = { "control":[], "partial":[], "partial_asymmetric":[] }
+condition_cumulative_scores = { "control":[], "partial":[], "partial_asymmetric":[] }
 avg_time = []
 for room in rooms:
 	p1_uid = room[2]
 	p2_uid = room[3]
 	experimental_condition = room[19]
-	scores = room[18]
-	if len(scores) < 20:
+	scores = room[18].strip("/[/]").split(", ")
+	scores = [float(score) for score in scores if score != ""]
+	if not scores or len(scores) < 20:
+		if experimental_condition:
+			condition_dropout_rate[experimental_condition].append(0)
 		print("Dropping out Room", room[0], "with users", p1_uid, p2_uid, "and condition", experimental_condition)
 		continue
 
 	print("Room", room[0], "with users", p1_uid, p2_uid, "and condition", experimental_condition)
 	time_last_move = room[4]
 
+	condition_dropout_rate[experimental_condition].append(1)
+	condition_game_scores[experimental_condition].append(np.sum(scores) / len(scores))
+	condition_cumulative_scores[experimental_condition].append(np.sum(scores))
+
+	""" Find how long task takes on average"""
 	query = "select last_active from worker where id =" + str(p1_uid) + ";"
 	cursor.execute(query)
 	last_active_p1 = cursor.fetchone()[0]
@@ -73,3 +84,14 @@ for m in moves:
 print("P1", chosen_arms_p1)
 print("P2", chosen_arms_p2)
 
+print("Dropout rate per condition:")
+for condition, is_dropout_list in condition_dropout_rate.items():
+	print(condition, ":", 1. - np.sum(is_dropout_list) / len(is_dropout_list), "; total :", len(is_dropout_list))
+
+print("Score average per condition (per game):")
+for condition, scores in condition_game_scores.items():
+	print(condition, ":", np.sum(scores) / len(scores), min(scores), max(scores), np.std(scores))
+
+print("Score average per condition (per team):")
+for condition, scores in condition_cumulative_scores.items():
+	print(condition, ":", np.sum(scores) / len(scores), min(scores), max(scores), np.std(scores))
