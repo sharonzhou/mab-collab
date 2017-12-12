@@ -73,16 +73,21 @@ print("Average time on task: ", np.sum(avg_time) / len(avg_time) / 60.)
 
 chosen_arms_p1 = [[] for _ in range(20)]
 chosen_arms_p2 = [[] for _ in range(20)]
+chosen_arms = [[None for _ in range(15)] for _ in range(20)]
 for m in moves:
 	if m[7] is None:
 		continue
+	trial = m[3]
 	game = m[4]
 	if m[1] == 35:
 		chosen_arms_p1[game - 1].append(m[2])
-	if m[1] == 34:
+		chosen_arms[game - 1][trial - 1] = m[2]
+	elif m[1] == 34:
 		chosen_arms_p2[game - 1].append(m[2])
+		chosen_arms[game - 1][trial - 1] = m[2]
 print("P1", chosen_arms_p1)
 print("P2", chosen_arms_p2)
+print("All chosen arms", chosen_arms)
 
 print("Dropout rate per condition:")
 for condition, is_dropout_list in condition_dropout_rate.items():
