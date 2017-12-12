@@ -80,10 +80,11 @@ class Analysis:
 		self.num_valid_rooms = len(valid_rooms)
 		self.room_id_mapping = { r["room_id"]: i for i, r in enumerate(self.valid_rooms) }
 
+		# Rewards are Bernoulli
+		self.num_rewards = 2 
 		self.num_games = 20
 		self.num_trials = 15
 		self.num_arms = 4
-		self.num_rewards = 2 # Bernoulli
 
 		# Compute per trial model agreement
 		self.model_agreement = np.zeros((self.num_valid_rooms, self.num_games, self.num_trials))
@@ -92,6 +93,8 @@ class Analysis:
 		self.rewards = np.zeros((self.num_valid_rooms, self.num_games, self.num_trials))
 
 	def compute_model_agreement(self):
+		self.average_model_agreement_by_condition = { "control": 0, "partial": 0, "partial_asymmetric": 0 }
+		self.num_rooms_by_condition = { "control": 0, "partial": 0, "partial_asymmetric": 0 }
 		for room in self.valid_rooms:
 			room_id_original = room["room_id"]
 			room_id = self.room_id_mapping[room_id_original]
@@ -102,6 +105,7 @@ class Analysis:
 			p2_observability = observability_probabilities[experimental_condition][p2]
 			next_turn = p1
 
+			self.num_rooms_by_condition[experimental_condition] += 1
 			for g in range(self.num_games):
 				p1_model = CollaborativeModel(n_arms=self.num_arms, T=self.num_trials, my_observability=p1_observability, partner_observability=p2_observability)
 				p2_model = CollaborativeModel(n_arms=self.num_arms, T=self.num_trials, my_observability=p2_observability, partner_observability=p1_observability)
@@ -117,6 +121,8 @@ class Analysis:
 						self.model_actions[room_id, g, t] = k_model
 						self.human_actions[room_id, g, t] = k_human
 						self.model_agreement[room_id, g, t] = k_human == k_model
+						if t != 0 and k_human == k_model:
+							self.average_model_agreement_by_condition[experimental_condition] += 1
 
 						reward = room["rewards"][g][t]
 						
@@ -135,17 +141,25 @@ class Analysis:
 							p2_model.observe(k_human, reward, p1_observed)
 						
 						next_turn = p1 if next_turn == p2 else p2
-		
 		# Remove trial 1 (t=0)
 		print("Original shape (room, g, t): ", self.model_agreement.shape)
 		self.model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)
 		print("New shape (room, g, t): ", self.model_agreement.shape)
+
+		# Compute average model agreement
+		print("Sum model agreement:", np.sum(self.model_agreement))
 		self.average_model_agreement = np.true_divide(np.sum(self.model_agreement), \
 			self.model_agreement.shape[0] * self.model_agreement.shape[1] * self.model_agreement.shape[2])
 
+		# Compute average model agreement by condition
+		print("AVERAGE AGREEMENT BY CONDITION:", self.average_model_agreement_by_condition)
+		self.average_model_agreement_by_condition["control"] /= 280. * self.num_rooms_by_condition["control"]
+		self.average_model_agreement_by_condition["partial"] /= 280. * self.num_rooms_by_condition["partial"]
+		self.average_model_agreement_by_condition["partial_asymmetric"] /= 280. * self.num_rooms_by_condition["partial_asymmetric"]
+
 		print("Mapping of room ids:", self.room_id_mapping)
-		print("MODEL AGREEMENT:", self.model_agreement)	
 		print("AVERAGE AGREEMENT:", self.average_model_agreement)
+		print("AVERAGE AGREEMENT BY CONDITION:", self.average_model_agreement_by_condition)
 
 		return self.human_actions, self.model_actions, self.model_agreement 
 url = parse.urlparse(os.environ["DATABASE_URL"])
