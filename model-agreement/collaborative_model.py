@@ -143,6 +143,8 @@ class CollaborativeModel:
 		decisions = np.array([sum([self.q[k, i] * i / 100. for i in range(101)]) for k in range(self.n_arms)]) \
 						+ math.ceil((self.T - self.t - 1) / 2.) * information_gain \
 						+ math.floor((self.T - self.t - 1) / 2.) * information_gain_partner
+						# This term here represents partner's immediate/exploitative value - tried for model agreement, but no better (slightly worse)
+						# + np.sum(self.A_partner, axis=1) / self.A_partner.shape[1]
 		self.decisions = decisions
 		self.decision = np.argmax(decisions)
 
