@@ -1,0 +1,66 @@
+{% block head %}
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	<script type="text/javascript">
+	  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+	</script>
+	<script type="text/javascript">
+		google.charts.load("current", {packages:["corechart"]});
+		google.charts.setOnLoadCallback(function() { visualize(rows)} );
+	</script>
+	<script type="text/javascript">
+		var rows = JSON.parse({{ rows | tojson | safe}});
+		function visualize(rows) {
+			var charts_options = {
+				width: 900,
+				chartArea: { width: "80%", height: "70%" },
+				legend: { position: "none" },
+				hAxis: { format: "#", title: "Trials", titleTextStyle: { italic: false, fontSize: 14 }},
+				vAxis: { title: "Chosen arm", titleTextStyle: { italic: false, fontSize: 14 }},
+				fontName: "Palatino",
+				annotations: { alwaysOutside: true, stem: { color: "none" }}
+			};
+			var num_tr = 0;
+			for (g = 0; g < rows.length; g++) {
+				if (g % 2 == 0) {
+					num_tr += 1;
+				}
+				$("#tr_" + String(num_tr)).append('<td id="chart_' + String(g + 1) + '"></td>');
+
+				var data = new google.visualization.DataTable();
+				data.addColumn("string", "Trials");
+				data.addColumn("number", "Arm");
+				data.addColumn({ type: "string", role: "style" });
+				data.addColumn({ type: "string", role: "annotation" });
+				data.addColumn({ type: "string", role: 'tooltip', p: {"html": true}})
+				data.addRows(rows[g]);
+
+				var chart = new google.visualization.ColumnChart(document.getElementById("chart_" + String(g + 1)));
+				chart_options = $.extend({}, charts_options);
+				chart.draw(data, chart_options);
+			}
+		}
+	</script>
+</head>
+{% endblock %}
+
+{% block body %}
+<body>
+	<h1>Room {{ room_id }}:  <h4>Bolds means agreement with model. Annotations are model's moves.</h4></h1>
+	<table>
+		<tr id="tr_0"></tr>
+		<tr id="tr_1"></tr>
+		<tr id="tr_2"></tr>
+		<tr id="tr_3"></tr>
+		<tr id="tr_4"></tr>
+		<tr id="tr_5"></tr>
+		<tr id="tr_6"></tr>
+		<tr id="tr_7"></tr>
+		<tr id="tr_8"></tr>
+		<tr id="tr_9"></tr>
+		<tr id="tr_10"></tr>
+		<tr id="tr_11"></tr>
+	</table>
+</body>
+{% endblock %}
