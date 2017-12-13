@@ -116,7 +116,11 @@ class CollaborativeModel:
 		for k in range(self.n_arms):
 			# Expected reward rates
 			expectation = sum([self.q[k, i] * i / 100. for i in range(101)])
-			expectation_partner = sum(self.A_partner[k]) / len(self.A_partner[k]) 
+			valid_expectation_partner_index = 0
+			for i, e in enumerate(self.A_partner[k]):
+				if e != 0:
+					valid_expectation_partner_index = i
+			expectation_partner = sum(self.A_partner[k]) / (valid_expectation_partner_index + 1)
 
 			# Hypothetical success
 			q_success = self._update_my_belief(self.q, k, 1, self.prior, my_hypothetical_observability=self.my_observability)
