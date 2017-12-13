@@ -115,6 +115,7 @@ class Analysis:
 			room_model_actions = np.zeros((self.num_games, self.num_trials))
 			room_human_actions = np.zeros((self.num_games, self.num_trials))
 			room_model_agreement = np.zeros((self.num_games, self.num_trials))
+			room_rewards = np.zeros((self.num_games, self.num_trials))
 
 			for g in range(self.num_games):
 				p1_model = CollaborativeModel(n_arms=self.num_arms, T=self.num_trials, alpha=p1_alpha, beta=p1_beta, my_observability=p1_observability, partner_observability=p2_observability)
@@ -135,7 +136,8 @@ class Analysis:
 						self.average_model_agreement_by_condition[experimental_condition] += 1
 
 					reward = room["rewards"][g][t]
-					
+					room_rewards[g][t] = reward
+
 					# Update models based on observability
 					p1_observed = experimental_conditions[experimental_condition][p1][g][t]
 					p2_observed = experimental_conditions[experimental_condition][p2][g][t]
@@ -159,6 +161,7 @@ class Analysis:
 			self.model_actions[room_id] = room_model_actions
 			self.human_actions[room_id] = room_human_actions
 			self.model_agreement[room_id] = full_room_model_agreement
+			self.rewards[room_id] = room_rewards
 
 		# Model agreement across rooms, removing trial 1 (trial=0)
 		self.model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)

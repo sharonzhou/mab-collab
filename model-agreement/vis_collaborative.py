@@ -17,26 +17,28 @@ def human_actions(room_id):
 	model_actions, model_agreement, _ = analysis.get_model_agreement()
 
 	# Rows for room actions
-	actions = human_actions[int(room_id) - 1]
-	rows = [[] for _ in range(len(actions))]
-	for g, game in enumerate(actions):
+	human_actions = human_actions[int(room_id) - 1]
+	rows = [[] for _ in range(len(human_actions))]
+	for g, game in enumerate(human_actions):
 		rows[g] = [[] for _ in range(len(game) - 1)]
 		for t, _ in enumerate(game):
-			if t == len(game) - 1:
+			# Skip trial 0
+			if t == 0:
 				continue
 			style = "fill-color: rgb(211,94,96);"
-			if rewards[int(room_id)][g][t]:
+			if rewards[int(room_id) - 1][g][t]:
 				style = "fill-color: rgb(132,186,91);"
 
 			annotation = "{}".format(str(int(model_actions[int(room_id) - 1][g][t] + 1)))
-			tooltip = "{}\n".format(str(int(model_actions[int(room_id) - 1][g][t] + 1)))
+			tooltip = "t={}\nH {}\nR {}".format(str(t), str(int(human_actions[g][t] + 1)), str(int(model_actions[int(room_id) - 1][g][t] + 1)))
 
-			if model_agreement[int(room_id) - 1][g][t]:
+			# Model agreement has trials shifted by -1 because of dropping trial 0
+			if model_agreement[int(room_id) - 1][g][t - 1]:
 				style += "fill-opacity: 1;"
 			else:
 				style += "fill-opacity: .2;"
 
-			rows[g][t] = ["Trial {}".format(str(t + 1)), actions[g][t] + 1, style, annotation, tooltip]
+			rows[g][t - 1] = ["Trial {}".format(str(t)), human_actions[g][t] + 1, style, annotation, tooltip]
 		print("rows[g] is:",rows[g])
 	return render_template("human_actions_collaborative.html", rows=json.dumps(rows), room_id=original_room_id)
 
