@@ -70,7 +70,7 @@ class Analysis:
 					chosen_arms[game - 1][trial - 1] = chosen_arm
 					rewards[game - 1][trial - 1] = reward
 
-			print("Room {}, All chosen arms: {}".format(room_id, chosen_arms))
+			# print("Room {}, All chosen arms: {}".format(room_id, chosen_arms))
 
 			valid_room["chosen_arms"] = chosen_arms
 			valid_room["rewards"] = rewards
@@ -95,21 +95,41 @@ class Analysis:
 	def compute_model_agreement(self):
 		self.average_model_agreement_by_condition = { "control": 0, "partial": 0, "partial_asymmetric": 0 }
 		self.num_rooms_by_condition = { "control": 0, "partial": 0, "partial_asymmetric": 0 }
+		best_params = [ [] for _ in range(self.num_valid_rooms) ]
+		best_agreement = [ None for _ in range(self.num_valid_rooms) ]
+		history_agreement_to_params = [ {} for _ in range(self.num_valid_rooms) ]
 		for room in self.valid_rooms:
 			room_id_original = room["room_id"]
 			room_id = self.room_id_mapping[room_id_original]
+#
+			# # Easy way to skip to a certain room
+			# if room_id < 9:
+			# 	continue
+#
+
 			p1 = 0
 			p2 = 1
 			experimental_condition = room["experimental_condition"]
 			p1_observability = observability_probabilities[experimental_condition][p1]
 			p2_observability = observability_probabilities[experimental_condition][p2]
 			next_turn = p1
-
 			self.num_rooms_by_condition[experimental_condition] += 1
-			for g in range(self.num_games):
-				p1_model = CollaborativeModel(n_arms=self.num_arms, T=self.num_trials, my_observability=p1_observability, partner_observability=p2_observability)
-				p2_model = CollaborativeModel(n_arms=self.num_arms, T=self.num_trials, my_observability=p2_observability, partner_observability=p1_observability)
-				for t in range(self.num_trials):
+
+			p1_alphas = [.01, 1., 2., 3., 5., 10.]
+			p1_betas = [.01, 1., 2., 3., 5., 10.]
+			p2_alphas = [.01, 1., 2., 3., 5., 10.]
+			p2_betas = [.01, 1., 2., 3., 5., 10.]
+
+			for p1_alpha, p1_beta, p2_alpha, p2_beta in itertools.product(p1_alphas, p1_betas, p2_alphas, p2_betas):
+				params = [p1_alpha, p1_beta, p2_alpha, p2_beta]
+				room_model_actions = np.zeros((self.num_games, self.num_trials))
+				room_human_actions = np.zeros((self.num_games, self.num_trials))
+				room_model_agreement = np.zeros((self.num_games, self.num_trials))
+
+				for g in range(self.num_games):
+					p1_model = CollaborativeModel(n_arms=self.num_arms, T=self.num_trials, alpha=p1_alpha, beta=p1_beta, my_observability=p1_observability, partner_observability=p2_observability)
+					p2_model = CollaborativeModel(n_arms=self.num_arms, T=self.num_trials, alpha=p2_alpha, beta=p2_beta, my_observability=p2_observability, partner_observability=p1_observability)
+					for t in range(self.num_trials):
 						# Chosen arms indexed at 0 for model, but 1 for human record in db
 						k_human = int(room["chosen_arms"][g][t] - 1)
 
@@ -118,11 +138,11 @@ class Analysis:
 						else:
 							k_model = p2_model.choose()
 						
-						self.model_actions[room_id, g, t] = k_model
-						self.human_actions[room_id, g, t] = k_human
-						self.model_agreement[room_id, g, t] = k_human == k_model
-						if t != 0 and k_human == k_model:
-							self.average_model_agreement_by_condition[experimental_condition] += 1
+						room_model_actions[g, t] = k_model
+						room_human_actions[g, t] = k_human
+						room_model_agreement[g, t] = k_human == k_model
+						# if t != 0 and k_human == k_model:
+						# 	room_average_model_agreement_by_condition[experimental_condition] += 1
 
 						reward = room["rewards"][g][t]
 						
@@ -141,25 +161,47 @@ class Analysis:
 							p2_model.observe(k_human, reward, p1_observed)
 						
 						next_turn = p1 if next_turn == p2 else p2
+				# Model agreement (average) for this room w/ these params, while removing trial 1
+				full_room_model_agreement = np.copy(room_model_agreement)
+				room_model_agreement = np.delete(room_model_agreement, np.s_[0], axis=1)
+				room_model_agreement = np.true_divide(np.sum(room_model_agreement), room_model_agreement.shape[0] * room_model_agreement.shape[1])
+				if room_model_agreement not in list(history_agreement_to_params[room_id].keys()):
+					history_agreement_to_params[room_id][room_model_agreement] = []
+				history_agreement_to_params[room_id][room_model_agreement].append(params)
+				# Write to db room_id_original, room_model_agreement, params to csv of history; use vals above for lookup
+				print(room_id, room_id_original, "Found agreement as: ", room_model_agreement, " with params p1_a, p1_b, p2_a, p2_b as ", params)
+				if best_agreement[room_id] is None or room_model_agreement > best_agreement[room_id]:
+					print(room_id, room_id_original, "Found new best agreement as: ", room_model_agreement, " with params p1_a, p1_b, p2_a, p2_b as ", params)
+					best_agreement[room_id] = room_model_agreement
+					best_params[room_id] = params
+					self.model_actions[room_id] = room_model_actions
+					self.human_actions[room_id] = room_human_actions
+					self.model_agreement[room_id] = full_room_model_agreement
+					# self.average_model_agreement_by_condition[experimental_condition] = room_average_model_agreement_by_condition
+			print("History so far ", history_agreement_to_params)
+			print("All best params for users so far: {}".format(best_params))
+			print("Best params found for room {} is {}".format(room_id, best_params[room_id]))
+
+		# Model agreement across rooms
+		print("Final history of agreement to params ", history_agreement_to_params)
+		print("Final best agreement values for all rooms ", best_agreement)
+		print("Final best params for all rooms ", best_params)
+		
 		# Remove trial 1 (t=0)
-		print("Original shape (room, g, t): ", self.model_agreement.shape)
 		self.model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)
-		print("New shape (room, g, t): ", self.model_agreement.shape)
 
 		# Compute average model agreement
 		print("Sum model agreement:", np.sum(self.model_agreement))
 		self.average_model_agreement = np.true_divide(np.sum(self.model_agreement), \
 			self.model_agreement.shape[0] * self.model_agreement.shape[1] * self.model_agreement.shape[2])
-
-		# Compute average model agreement by condition
-		print("AVERAGE AGREEMENT BY CONDITION:", self.average_model_agreement_by_condition)
-		self.average_model_agreement_by_condition["control"] /= 280. * self.num_rooms_by_condition["control"]
-		self.average_model_agreement_by_condition["partial"] /= 280. * self.num_rooms_by_condition["partial"]
-		self.average_model_agreement_by_condition["partial_asymmetric"] /= 280. * self.num_rooms_by_condition["partial_asymmetric"]
-
 		print("Mapping of room ids:", self.room_id_mapping)
 		print("AVERAGE AGREEMENT:", self.average_model_agreement)
-		print("AVERAGE AGREEMENT BY CONDITION:", self.average_model_agreement_by_condition)
+
+		# Compute average model agreement by condition
+		# self.average_model_agreement_by_condition["control"] /= 280. * self.num_rooms_by_condition["control"]
+		# self.average_model_agreement_by_condition["partial"] /= 280. * self.num_rooms_by_condition["partial"]
+		# self.average_model_agreement_by_condition["partial_asymmetric"] /= 280. * self.num_rooms_by_condition["partial_asymmetric"]
+		# print("AVERAGE AGREEMENT BY CONDITION:", self.average_model_agreement_by_condition)
 
 		return self.human_actions, self.model_actions, self.model_agreement 
 url = parse.urlparse(os.environ["DATABASE_URL"])
