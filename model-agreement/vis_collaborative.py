@@ -10,7 +10,7 @@ app = Flask(__name__)
 def human_actions(rid):
 	url = parse.urlparse(os.environ["DATABASE_URL"])
 	analysis = Analysis(url)
-	room_id = int(rid) - 1
+	room_id = int(rid)
 	original_room_id = analysis.id_room_mapping[room_id]
 
 	human_actions = analysis.human_actions
@@ -37,7 +37,6 @@ def human_actions(rid):
 				style += "fill-opacity: .2;"
 
 			rows[g][t] = ["Trial {}".format(str(t)), human_actions[g][t] + 1, style, annotation, tooltip]
-		print("rows[g] is:", rows[g])
 	return render_template("human_actions_collaborative.html", rows=json.dumps(rows), room_id=room_id, original_room_id=original_room_id, experimental_condition=experimental_condition)
 
 @app.route("/")

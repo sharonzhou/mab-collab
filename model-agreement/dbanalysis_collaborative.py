@@ -165,13 +165,11 @@ class Analysis:
 			self.model_agreement[room_id] = full_room_model_agreement
 			self.rewards[room_id] = room_rewards
 			self.experimental_conditions[room_id] = experimental_condition
-			print(room_id, room_id_original, room_human_actions)
 
 		# Model agreement across rooms, removing trial 1 (trial=0)
 		self.adjusted_model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)
 
 		# Compute average model agreement
-		print("Sum model agreement:", np.sum(self.adjusted_model_agreement))
 		self.average_model_agreement = np.true_divide(np.sum(self.adjusted_model_agreement), \
 			self.adjusted_model_agreement.shape[0] * self.adjusted_model_agreement.shape[1] * self.adjusted_model_agreement.shape[2])
 		print("Mapping of room ids:", self.room_id_mapping)
@@ -284,7 +282,6 @@ class Analysis:
 		self.adjusted_model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)
 
 		# Compute average model agreement
-		print("Sum model agreement:", np.sum(self.adjusted_model_agreement))
 		self.average_model_agreement = np.true_divide(np.sum(self.adjusted_model_agreement), \
 			self.adjusted_model_agreement.shape[0] * self.adjusted_model_agreement.shape[1] * self.adjusted_model_agreement.shape[2])
 		print("Mapping of room ids:", self.room_id_mapping)
