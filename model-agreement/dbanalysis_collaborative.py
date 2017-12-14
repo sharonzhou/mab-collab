@@ -86,12 +86,14 @@ class Analysis:
 		self.num_games = 20
 		self.num_trials = 15
 		self.num_arms = 4
+		self.num_conditions = 3
 
 		# Compute per trial model agreement
 		self.model_agreement = np.zeros((self.num_valid_rooms, self.num_games, self.num_trials))
 		self.model_actions = np.zeros((self.num_valid_rooms, self.num_games, self.num_trials))
 		self.human_actions = np.zeros((self.num_valid_rooms, self.num_games, self.num_trials))
 		self.rewards = np.zeros((self.num_valid_rooms, self.num_games, self.num_trials))
+		self.experimental_conditions = ["" for _ in range(self.num_valid_rooms)]
 
 	def get_model_agreement(self):
 		self.average_model_agreement_by_condition = { "control": 0, "partial": 0, "partial_asymmetric": 0 }
@@ -162,6 +164,7 @@ class Analysis:
 			self.human_actions[room_id] = room_human_actions
 			self.model_agreement[room_id] = full_room_model_agreement
 			self.rewards[room_id] = room_rewards
+			self.experimental_conditions[room_id] = experimental_condition
 
 		# Model agreement across rooms, removing trial 1 (trial=0)
 		self.model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)

@@ -104,23 +104,22 @@ class CollaborativeModel:
 				self.reward_observability_both_count[k] += 1
 			self.q = self._update_my_belief(self.q, k, r, self.prior)
 
+		# Update model of partner's belief
+		self.A_partner = self._update_partner_belief(self.A_partner, self.success_count, self.reward_observability_count, self.reward_observability_partner_count)
+
 		self.t += 1
 
 	def choose(self): 
-		# Update model of partner's belief (could do this in observe(), but want to reduce computing this 2x -> 1x every 2 rounds)
-		self.A_partner = self._update_partner_belief(self.A_partner, self.success_count, self.reward_observability_count, self.reward_observability_partner_count)
-
 		# Information gain
 		information_gain = np.zeros((self.n_arms))
 		information_gain_partner = np.zeros((self.n_arms))
 		for k in range(self.n_arms):
 			# Expected reward rates
 			expectation = sum([self.q[k, i] * i / 100. for i in range(101)])
-			valid_expectation_partner_index = 0
-			for i, e in enumerate(self.A_partner[k]):
-				if e != 0:
-					valid_expectation_partner_index = i
-			expectation_partner = sum(self.A_partner[k]) / (valid_expectation_partner_index + 1)
+			
+			expectation_partner = 0
+			if self.reward_observability_partner_count[k] != 0: 
+				expectation_partner = sum(self.A_partner[k]) / self.reward_observability_partner_count[k]
 
 			# Hypothetical success
 			q_success = self._update_my_belief(self.q, k, 1, self.prior, my_hypothetical_observability=self.my_observability)

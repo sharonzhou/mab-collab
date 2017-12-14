@@ -13,31 +13,31 @@
 
 	<h2>Model Agreement Percentage</h2>
 	<div>{{ avg_agreement }}</div>
+
+	<h3>By room</h3>
 	<table>
 		<tr>
-			<th>Room #</th>
-			<th>Trial 1</th>
-			<th>Trial 2</th>
-			<th>Trial 3</th>
-			<th>Trial 4</th>
-			<th>Trial 5</th>
-			<th>Trial 6</th>
-			<th>Trial 7</th>
-			<th>Trial 8</th>
-			<th>Trial 9</th>
-			<th>Trial 10</th>
-			<th>Trial 11</th>
-			<th>Trial 12</th>
-			<th>Trial 13</th>
-			<th>Trial 14</th>
-			<th>Trial 15</th>
+			<th>Room</th>
+			<th>Avg agreement</th>
 		</tr>
-		{% for game in user_avg_agreement %}
+		{% for room in room_avg_agreement %}
 		<tr>
 			<td><a href="{{ '/human_actions/%s'%(loop.index0) }}">Room {{ loop.index0 }}</a></td>
-			{% for trial in game %}
-				<td>{{ trial | round(2) }}</td>
-			{% endfor %}
+			<td>{{ room | round(2) }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	<h3>By game</h3>
+	<table>
+		<tr>
+			<th>Game</th>
+			<th>Avg agreement</th>
+		</tr>
+		{% for game in game_avg_agreement %}
+		<tr>
+			<td>Game {{ loop.index0 }}</td>
+			<td>{{ game | round(2) }}</td>
 		</tr>
 		{% endfor %}
 	</table>
