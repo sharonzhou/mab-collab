@@ -165,14 +165,15 @@ class Analysis:
 			self.model_agreement[room_id] = full_room_model_agreement
 			self.rewards[room_id] = room_rewards
 			self.experimental_conditions[room_id] = experimental_condition
+			print(room_id, room_id_original, room_human_actions)
 
 		# Model agreement across rooms, removing trial 1 (trial=0)
-		self.model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)
+		self.adjusted_model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)
 
 		# Compute average model agreement
-		print("Sum model agreement:", np.sum(self.model_agreement))
-		self.average_model_agreement = np.true_divide(np.sum(self.model_agreement), \
-			self.model_agreement.shape[0] * self.model_agreement.shape[1] * self.model_agreement.shape[2])
+		print("Sum model agreement:", np.sum(self.adjusted_model_agreement))
+		self.average_model_agreement = np.true_divide(np.sum(self.adjusted_model_agreement), \
+			self.adjusted_model_agreement.shape[0] * self.adjusted_model_agreement.shape[1] * self.adjusted_model_agreement.shape[2])
 		print("Mapping of room ids:", self.room_id_mapping)
 		print("AVERAGE AGREEMENT:", self.average_model_agreement)
 
@@ -182,7 +183,7 @@ class Analysis:
 		self.average_model_agreement_by_condition["partial_asymmetric"] /= 280. * self.num_rooms_by_condition["partial_asymmetric"]
 		print("AVERAGE AGREEMENT BY CONDITION:", self.average_model_agreement_by_condition)
 
-		return self.model_actions, self.model_agreement, self.average_model_agreement
+		return self.model_actions, self.model_agreement, self.average_model_agreement, self.adjusted_model_agreement
 
 	def compute_model_agreement(self):
 		self.average_model_agreement_by_condition = { "control": 0, "partial": 0, "partial_asymmetric": 0 }
@@ -280,16 +281,16 @@ class Analysis:
 		print("Final best params for all rooms ", best_params)
 		
 		# Remove trial 1 (t=0)
-		self.model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)
+		self.adjusted_model_agreement = np.delete(self.model_agreement, np.s_[0], axis=2)
 
 		# Compute average model agreement
-		print("Sum model agreement:", np.sum(self.model_agreement))
-		self.average_model_agreement = np.true_divide(np.sum(self.model_agreement), \
-			self.model_agreement.shape[0] * self.model_agreement.shape[1] * self.model_agreement.shape[2])
+		print("Sum model agreement:", np.sum(self.adjusted_model_agreement))
+		self.average_model_agreement = np.true_divide(np.sum(self.adjusted_model_agreement), \
+			self.adjusted_model_agreement.shape[0] * self.adjusted_model_agreement.shape[1] * self.adjusted_model_agreement.shape[2])
 		print("Mapping of room ids:", self.room_id_mapping)
 		print("AVERAGE AGREEMENT:", self.average_model_agreement)
 
-		return self.model_actions, self.model_agreement, self.average_model_agreement
+		return self.model_actions, self.model_agreement, self.average_model_agreement, self.adjusted_model_agreement
 
 # Test
 # url = parse.urlparse(os.environ["DATABASE_URL"])

@@ -6,41 +6,38 @@ from dbanalysis_collaborative import Analysis
 
 app = Flask(__name__)
 
-@app.route("/human_actions/<room_id>")
-def human_actions(room_id):
+@app.route("/human_actions/<rid>")
+def human_actions(rid):
 	url = parse.urlparse(os.environ["DATABASE_URL"])
 	analysis = Analysis(url)
-	original_room_id = analysis.id_room_mapping[int(room_id)]
+	room_id = int(rid) - 1
+	original_room_id = analysis.id_room_mapping[room_id]
 
 	human_actions = analysis.human_actions
 	rewards = analysis.rewards
-	model_actions, model_agreement, _ = analysis.get_model_agreement()
-	experimental_condition = analysis.experimental_conditions[int(room_id) - 1]
+	model_actions, model_agreement, avg_agreement, adjusted_model_agreement = analysis.get_model_agreement()
+	experimental_condition = analysis.experimental_conditions[room_id]
 
 	# Rows for room actions
-	human_actions = human_actions[int(room_id) - 1]
+	human_actions = human_actions[room_id]
 	rows = [[] for _ in range(len(human_actions))]
 	for g, game in enumerate(human_actions):
-		rows[g] = [[] for _ in range(len(game) - 1)]
+		rows[g] = [[] for _ in range(len(game))]
 		for t, _ in enumerate(game):
-			# Skip trial 0
-			if t == 0:
-				continue
 			style = "fill-color: rgb(211,94,96);"
-			if rewards[int(room_id) - 1][g][t]:
+			if rewards[room_id][g][t]:
 				style = "fill-color: rgb(132,186,91);"
 
-			annotation = "{}".format(str(int(model_actions[int(room_id) - 1][g][t] + 1)))
-			tooltip = "t={}\nH {}\nR {}".format(str(t), str(int(human_actions[g][t] + 1)), str(int(model_actions[int(room_id) - 1][g][t] + 1)))
+			annotation = "{}".format(str(int(model_actions[room_id][g][t] + 1)))
+			tooltip = "t={}\nH {}\nR {}".format(str(t), str(int(human_actions[g][t] + 1)), str(int(model_actions[room_id][g][t] + 1)))
 
-			# Model agreement has trials shifted by -1 because of dropping trial 0
-			if model_agreement[int(room_id) - 1][g][t - 1]:
+			if model_agreement[room_id][g][t]:
 				style += "fill-opacity: 1;"
 			else:
 				style += "fill-opacity: .2;"
 
-			rows[g][t - 1] = ["Trial {}".format(str(t)), human_actions[g][t] + 1, style, annotation, tooltip]
-		print("rows[g] is:",rows[g])
+			rows[g][t] = ["Trial {}".format(str(t)), human_actions[g][t] + 1, style, annotation, tooltip]
+		print("rows[g] is:", rows[g])
 	return render_template("human_actions_collaborative.html", rows=json.dumps(rows), room_id=room_id, original_room_id=original_room_id, experimental_condition=experimental_condition)
 
 @app.route("/")
@@ -51,7 +48,7 @@ def model(model="model"):
 	analysis = Analysis(url)
 	
 	# Get average model agreement
-	_, model_agreement, avg_agreement = analysis.get_model_agreement()
+	model_actions, model_agreement, avg_agreement, adjusted_model_agreement = analysis.get_model_agreement()
 
 	# Average agreement for a room
 	room_avg_agreement = np.true_divide(np.sum(model_agreement, axis=(1,2)), model_agreement.shape[1] * model_agreement.shape[2])
