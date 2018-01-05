@@ -13,15 +13,31 @@
 	<h1>Waiting Room</h1>
 	<div id="waiting_text">Good job on the practice round! We're pairing you with a partner.</div> 
 	<div id="experimental_condition_text"></div>
+<!-- 	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
 	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
 	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
-	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
-	<img id="loading_gif" src="/static/img/loading.gif" height="60px">
+	<img id="loading_gif" src="/static/img/loading.gif" height="60px"> -->
+	<br>
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<img id="loading_gif" src="/static/img/coin_spinning.gif" height="15px">
+	<br><br>
 	<div><b>Instructions</b> (same as before):</div>
 	</br> 
-	<div>In the game, you will choose between <b>4 choices</b> in each round. Each choice has a <b>different chance of getting 1 point or no points</b>. You will play 15 rounds (aka. make 15 choices) for each game. These chances are reset to something different at the beginning of a game. The goal is to get the most points with your partner.</div>
+	<div>In the game, you will choose between flipping <b>4 coins</b> in each round. Each coin has a <b>different chance of getting 1 point or no points</b>. You will play {{ vars.num_trials }} rounds (aka. make {{ vars.num_trials }} flips) for each game. Coins are exchanged for new coins with different chances at the beginning of a game. The goal is to get the most points with your partner across all games.</div>
 	</br>
-	<div>Each game has 15 rounds. You will play 20 games with your partner.</div>
+	<div>Each game includes {{ vars.num_trials }} flips. You will play {{ vars.num_games }} games with your partner.</div>
 	</br></br>
 	<div><b>Wait time</b>:</div>
 	</br>

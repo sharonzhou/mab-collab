@@ -7,18 +7,24 @@
 {% endblock %}
 
 {% block body %}
+	<script async type="text/javascript">
+	  var vars = {{ vars|tojson|safe }};
+	</script>
 	<div id="index_wrapper">
-	<h1>Welcome!</h1> 
+	<h1><img height="30" src="../static/img/coin_question.png" alt="Coin image loading..."> Welcome! <img height="30" src="../static/img/coin_question.png" alt="Coin image loading..."></h1>
 	<h3><b>Instructions:</b></h3>
-	<div>You will choose between <b>4 choices</b>.
-		<br>Each choice has a <b>different chance of getting 1 point or 0 points</b>.
-		<br><br>You will make 15 choices (rounds) in each game. You will have 20 seconds per choice. 
-		<br>These chances are the same for a game, but <b>reset</b> for the next game. 
-		<br>The goal is to get the most points with your partner.
+	<div>
+		<img height="15" src="../static/img/coin_spinning.gif"> You will choose between flipping <b>4 different coins</b>.
+		<br><img height="15" src="../static/img/coin_spinning.gif"> Coins will give 1 point on one side, and 0 points on the other.
+		<br><img height="15" src="../static/img/coin_spinning.gif"> Each coin has a <b>different chance of giving 1 or 0 points</b>. Think of a coin as weighted heavier on one side than the other, but you do not know which side is heavier upfront.
+		<br><br><img height="15" src="../static/img/coin_spinning.gif"> You will have {{ vars.num_trials }} flips in each game, and 20 seconds to decide which of the 4 coins to flip. 
+		<br><img height="15" src="../static/img/coin_spinning.gif"> Coins are exchanged for new coins with different weighted sides after the {{ vars.num_trials }} flips, in the next game. You will play {{ vars.num_games }} games with your partner.
+		<br><img height="15" src="../static/img/coin_spinning.gif"> The goal is to get the most points with your partner.
 	</div>
 	<br>
-	<div>You will play 20 games with your partner.
-		<br>Let's start with 1 practice round by yourself. This doesn't count and has no time limit, just to understand the game.
+	<div>
+		<img height="15" src="../static/img/coin_spinning.gif"> You will play {{ vars.num_games }} games with your partner.
+		<br><img height="15" src="../static/img/coin_spinning.gif"> Let's start with a practice round by yourself. This doesn't count and has no time limit, and is just to understand the game.
 	</div>
 	<br>
 	<div>Please submit your Worker ID to begin:</div>

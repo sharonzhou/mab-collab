@@ -2,6 +2,7 @@
 
 {% block head %}
 	{{ super() }}
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 	<script async type=text/javascript src="{{
 		url_for('static', filename='js/play_double.js') }}"></script>
 {% endblock %}
@@ -10,17 +11,35 @@
 	<script async type="text/javascript">
 	  var vars = {{ vars|tojson|safe }};
 	</script>
-	<span id="game_wrapper" class="wrapper">Game <span id="game">1</span> of 20</span>
-	<span id="trial_wrapper" class="wrapper">Round <span id="trial">1</span> of 15</span>
+	<span id="coin_img"></span>
+	<span id="game_wrapper" class="wrapper">Game <span id="game">1</span> of {{ vars.num_games }}</span>
+	<span id="trial_wrapper" class="wrapper">Flip <span id="trial">1</span> of {{ vars.num_trials }}</span>
 	<div id="experimental_condition_text"></div>
 
 	<div id="turn_uid_wrapper">Turn: <span id="turn_uid"></span></div>
-	<p>
-		<button type="button" class="button-1 choice" id="1">Choice 1</button>
-		<button type="button" class="button-2 choice" id="2">Choice 2</button>
-		<button type="button" class="button-3 choice" id="3">Choice 3</button>
-		<button type="button" class="button-4 choice" id="4">Choice 4</button>
-	</p>
+	<table id="choices">
+		<tr>
+			<td id="choice_1_wrapper" class="choice_wrapper">
+				<span id="chart_1" class="chart"></span>
+				<button type="button" class="button-1 choice" id="1">Choice 1</button>
+			</td>
+
+			<td id="choice_2_wrapper" class="choice_wrapper">
+				<span id="chart_2" class="chart"></span>
+				<button type="button" class="button-2 choice" id="2">Choice 2</button>
+			</td>
+
+			<td id="choice_3_wrapper" class="choice_wrapper">
+				<span id="chart_3" class="chart"></span>
+				<button type="button" class="button-3 choice" id="3">Choice 3</button>
+			</td>
+
+			<td id="choice_4_wrapper" class="choice_wrapper">
+				<span id="chart_4" class="chart"></span>
+				<button type="button" class="button-4 choice" id="4">Choice 4</button>
+			</td>
+		</tr>
+	</table>
 	<div id="chosen_arm_wrapper" class="turn_information"><span id="past_turn_uid">You/Your partner</span> chose <span id="chosen_arm_highlight">Choice <span id="chosen_arm"></span></span></div>
 	<br>
 	<div id="points_information_box">

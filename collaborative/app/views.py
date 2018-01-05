@@ -6,8 +6,8 @@ import numpy as np
 import random, string, json
 from datetime import datetime, timedelta
 
-MAX_TRIALS = 15
-MAX_GAMES = 20
+num_trials = 40
+num_games = 10
 
 # Covnerts session variable to json-convertible dict
 def session_to_dict(session):
@@ -129,7 +129,7 @@ def give_reward():
 				session['next_turn_uid'] = room.p1_uid
 
 			# Record user's choice and reward to db, for trials within scope (don't record accidental requests from spamming keys)
-			if trial <= MAX_TRIALS:
+			if trial <= num_trials:
 				# Observability for this past trial
 				if is_p1:
 					is_observable = bool(p1_observability[game - 1][trial - 1])
@@ -171,7 +171,7 @@ def give_reward():
 				print('p1 and p2 scores....', json.loads(room.p1_scores_strs), json.loads(room.p2_scores_strs))
 
 				# Finished game; record score under scores 
-				if trial == MAX_TRIALS:
+				if trial == num_trials:
 					true_scores = json.loads(room.scores_strs)
 					true_scores.append(true_score)
 					session['scores'] = true_scores
@@ -190,8 +190,8 @@ def give_reward():
 					db.session.commit()
 
 			# Finished game (or over)
-			if trial >= MAX_TRIALS:
-				if game >= MAX_GAMES:
+			if trial >= num_trials:
+				if game >= num_games:
 					# Give completion code, storing value in room for partner to query
 					if not room.completion_code:
 						code = create_completion_code(session['amt_id'], 'completed')
@@ -232,8 +232,8 @@ def get_true_score():
 	if 'trial' in session and 'room_id' in session:
 		print('get_true_score', session)
 
-		# Return true score if trial is 15
-		if session['trial'] >= MAX_TRIALS:
+		# Return true score if trial is num_trials
+		if session['trial'] >= num_trials:
 			room = Room.query.get(session['room_id'])
 			return jsonify(true_score=room.score)
 
@@ -267,14 +267,14 @@ def give_reward_single():
 		session['completion_code'] = None
 
 		# Record user's choice and reward to db, for trials within scope (don't record accidental requests from spamming keys)
-		if trial <= MAX_TRIALS:
+		if trial <= num_trials:
 			score += reward
 			session['score'] = score
 			move = Move(uid=uid, chosen_arm=chosen_arm, trial=trial, game=game, reward=reward, score=score)
 			db.session.add(move)
 			db.session.commit()
 		session['next_game_bool'] = False
-		if trial >= MAX_TRIALS:
+		if trial >= num_trials:
 			session['next_game_bool'] = True
 
 		return jsonify(session_to_dict(session))
@@ -420,7 +420,12 @@ def check_waiting_room():
 				# Don't randomize as this changes controlling observability across pairs
 				session['next_turn_uid'] = user.id
 				
-				experimental_condition = random.choice(list(experimental_conditions.keys()))
+				# Set experimental condition randomly
+				# experimental_condition = random.choice(list(experimental_conditions.keys()))
+				# Fix experimental condition
+				# experimental_condition = "control"
+				experimental_condition = "partial"
+				# experimental_condition = "partial_asymmetric"
 				session['experimental_condition'] = experimental_condition
 
 				room = Room(next_turn_uid=user.id, p1_uid=user.id, p2_uid=partner_uid, \
@@ -448,6 +453,8 @@ def index():
 	print('index', session)
 	if 'amt_id' in session:
 		uhash = hash(session['amt_id'])
+		session['num_games'] = num_games
+		session['num_trials'] = num_trials		
 		if 'uid' in session:
 			user = Worker.query.get(session['uid'])
 		else:
@@ -455,7 +462,8 @@ def index():
 			session['uid'] = user.id
 		if user.timeout:
 			session.clear()
-			return render_template('index.html')
+			info_vars = { 'num_games': num_games, 'num_trials': num_trials }
+			return render_template('index.html', vars=info_vars)
 		session_vars = session_to_dict(session)
 		if 'timeout' in session and session['timeout']:
 			# Partner timed out
@@ -472,9 +480,11 @@ def index():
 		else:
 			print('Error, erase session')
 			session.clear()
-			return render_template('index.html')
+			info_vars = { 'num_games': num_games, 'num_trials': num_trials }
+			return render_template('index.html', vars=info_vars)
 	else:
-		return render_template('index.html')
+		info_vars = { 'num_games': num_games, 'num_trials': num_trials }
+		return render_template('index.html', vars=info_vars)
 
 app.secret_key = '\x96\xca\xd6\xe5\xa9\\\x08\xa2\x08\xdf\x82\xc2\xcc\xfe'
 

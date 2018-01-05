@@ -38,7 +38,7 @@ th {
 	margin-top: 20px;
 }
 
-/*Trial, Game, and Turn info */
+/*Trial, Game, and Turn info, Coin img spacing */
 #trial_wrapper {
 	padding-left: 50px;
 }
@@ -49,6 +49,10 @@ th {
 
 #turn_uid_wrapper, #chosen_arm_wrapper, #points_information_box {
 	margin-top: 25px;
+}
+
+#coin_img {
+	padding-right: 50px;
 }
 
 /*Chosen arm matching button*/
@@ -83,6 +87,10 @@ th {
 }
 
 /*Buttons*/
+
+#choices {
+	margin: auto; /*centering choices table with bars*/
+}
 
 #nextbutton {
 	margin: 20px;
