@@ -90,8 +90,11 @@ function drawSingleGame() {
 				uid: uid,
 				room_id: room_id
 			}, function(data) {
+				if (data.completion_code != null && data.completion_code != false) {
+					window.clearInterval(ping);
+					display_state(data.uid, data.score, data.reward, data.game, data.trial, data.next_game_bool, data.completion_code, data.scores, data.next_turn_uid, data.room_id, data.chosen_arm, data.is_observable, data.partner_is_observable, data.experimental_condition);
 				// Partner still going
-				if (data.next_turn_uid != data.uid) {
+				} else if (data.next_turn_uid != data.uid) {
 					display_disabled_state(data.reward)
 				// Partner dropped out of game
 				} else if (data.timeout == true) {
