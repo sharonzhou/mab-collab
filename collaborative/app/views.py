@@ -421,9 +421,9 @@ def check_waiting_room():
 				session['next_turn_uid'] = user.id
 				
 				# Set experimental condition randomly
-				# experimental_condition = random.choice(list(experimental_conditions.keys()))
+				experimental_condition = random.choice(list(experimental_conditions.keys()))
 				# Fix experimental condition
-				experimental_condition = "control"
+				# experimental_condition = "control"
 				# experimental_condition = "partial"
 				# experimental_condition = "partial_asymmetric"
 				session['experimental_condition'] = experimental_condition

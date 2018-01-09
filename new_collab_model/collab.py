@@ -116,8 +116,12 @@ class Visibility(object):
             # yield 1./9., (True, False)
             # yield 4./9., (False, True)
         elif self.condition=='partial_asymmetric':
-            yield 2./3., (True, False)
-            yield 1./3., (False, True)
+            yield 2./9., (True, True)
+            yield 2./9., (False, False)
+            yield 1./9., (True, False)
+            yield 4./9., (False, True)
+            # yield 2./3., (True, False)
+            # yield 1./3., (False, True)
 
 class Game(object):
     def __init__(self, turns, visibility=Visibility('control'), arms=[1, 2, 3, 4]):

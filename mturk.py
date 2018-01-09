@@ -6,20 +6,27 @@ import psycopg2
 import psycopg2.extras
 import numpy as np
 from datetime import datetime
+from collections import defaultdict
 
 HIT_IDS = [
-	# "3538U0YQ1FEYIG32Q09AABVJUNOF3S",
-	# "3M93N4X8HK7I7ZADZ51WXHVNF9FJS0",
-	"3KTCJ4SCVGL8ENH4PJZ4H80VVN71MI"
+	"3KTCJ4SCVGL8ENH4PJZ4H80VVN71MI",
+	"3IZPORCT1FTAFEFAWGY6VUACI0NRHI",
+	"32W3UF2EZO5CX02WZCOSCA2MDU1C4E",
+	"3X2LT8FDHW2MUZV3S6E65GPU7WL8WW"
 ]
 
 QUAL_ID = "3UZ6VZ89OUG2MYQI7QCGNQE7UQOBGC"
 QUAL_NAME = "doubletrouble"
 
-BASE_BONUS = 2.5
-WIN_MOST = 2
-WIN_AVG = 1
-WIN_TOP = 4
+HIT_COST = 0.5
+
+WAIT_BONUS = 0.5
+DROPOUT_BONUS = 1
+
+BASE_BONUS = 1.5
+WIN_MOST = 0
+WIN_AVG = 3
+WIN_TOP = 2
 
 parse.uses_netloc.append("postgres")
 url = parse.urlparse(os.environ["DATABASE_URL"])
@@ -55,7 +62,7 @@ for room in rooms:
 	scores = room[18].strip("\[\]").split(", ")
 	scores = [int(s) for s in scores if s != ""]
 
-	if len(scores) < 20:
+	if len(scores) < 10:
 		print("Dropping out Room", room[0], "with users", p1_uid, p2_uid, "and condition", experimental_condition)
 		continue
 
@@ -84,7 +91,7 @@ for code, score in completion_code_to_cumulative_score.items():
 		bonus += WIN_AVG
 	if score >= top_score:
 		bonus += WIN_TOP
-	completion_code_to_bonus[code] = bonus
+	completion_code_to_bonus[code.upper()] = bonus
 print("Completion code to bonus", completion_code_to_bonus)
 
 MAX_ASSIGNMENTS_PER_HIT = 300
@@ -121,24 +128,43 @@ print(assignments)
 
 workers = []
 total_bonuses = 0
+completion_codes = defaultdict(int)
+worker_ids = defaultdict(int)
+spammers = []
 for assignment in assignments:
 	assignment_id = assignment.AssignmentId
 	worker_id = assignment.WorkerId
+	worker_ids[worker_id] += 1
 	answers = assignment.answers[0]
 	completion_code = None
 	for answer in answers:
 		if answer.qid == "code":
-			completion_code = answer.fields[0].strip()
-			if completion_code in completion_code_to_bonus:
+			completion_code = answer.fields[0].strip().upper()
+			completion_codes[completion_code] += 1
+			if completion_code and completion_code[0] == "T":
+				bonus = WAIT_BONUS
+				total_bonuses += bonus + HIT_COST
+				workers.append({"worker_id": worker_id, "assignment_id": assignment_id, "bonus": bonus})
+				print("Worker (waiting) {0}: Completion code {1}, with bonus {2} ".format(worker_id, completion_code, bonus))
+			elif completion_code and completion_code[0] == "C" and completion_code[-1] == "P":
+				bonus = DROPOUT_BONUS
+				total_bonuses += bonus + HIT_COST
+				workers.append({"worker_id": worker_id, "assignment_id": assignment_id, "bonus": bonus})
+				print("Worker (partner dropped out) {0}: Completion code {1}, with bonus {2} ".format(worker_id, completion_code, bonus))
+			elif completion_code in completion_code_to_bonus:
 				bonus = completion_code_to_bonus[completion_code]
-				total_bonuses += bonus
+				total_bonuses += bonus + HIT_COST
 				workers.append({"worker_id": worker_id, "assignment_id": assignment_id, "bonus": bonus})
 				print("Worker {0}: Completion code {1}, with bonus {2} ".format(worker_id, completion_code, bonus))
-
-print("All workers:", workers)
+			else:
+				print("Worker {0} has no identifiable Completion code {1}".format(worker_id, completion_code))
+				spammers.append({"worker_id": worker_id, "assignment_id": assignment_id, "completion_code": completion_code})
+print("Redundant completion codes:", [c for c, v in completion_codes.items() if v > 2])
+print("Redundant workers codes:", [w for w, v in worker_ids.items() if v > 1])
+# print("All workers:", workers)
 print("Total number of workers: {}".format(len(workers)))
 print("Total bonuses:", total_bonuses)
-print("Do we have enough money in the account?", current_balance >= total_bonuses)
+print("Do we have enough money in the account?", current_balance, total_bonuses, current_balance >= total_bonuses)
 if current_balance < total_bonuses:
 	print("We need to add", total_bonuses - current_balance, ", rounded up", math.ceil(total_bonuses - current_balance))
 
@@ -153,28 +179,39 @@ print("Qual ID: {0}".format(qual_id))
 
 message = "Thanks for participating and for your feedback. Hope you enjoyed it!"
 
+errored_workers = []
+
 for worker in workers:
 	print(worker["worker_id"])
 	# Assign qualifications
-	try:
-		mturk.assign_qualification(qual_id, worker["worker_id"], value=1, send_notification=False)
-	except:
-		try:
-			mturk.assign_qualification(qual_id, worker["worker_id"], value=1)
-		except:
-			print("There was an error giving qual {0} with qual id {1} to worker {2} for HIT {3}".format(QUAL_NAME, qual_id, worker["worker_id"], worker["assignment_id"]))
-		else:
-			print("Gave qualification to {}".format(worker["worker_id"]))
-	else:
-		print("Gave qualification to {}".format(worker["worker_id"]))   
-	
-	# if current_balance < total_bonuses:
-	# 	print("Before paying workers, we need to add to our account $", total_bonuses - current_balance, ", rounded up that's $", math.ceil(total_bonuses - current_balance))
+	# try:
+	# 	mturk.assign_qualification(qual_id, worker["worker_id"], value=1, send_notification=False)
+	# except:
+	# 	try:
+	# 		mturk.assign_qualification(qual_id, worker["worker_id"], value=1)
+	# 	except:
+	# 		print("There was an error giving qual {0} with qual id {1} to worker {2} for HIT {3}".format(QUAL_NAME, qual_id, worker["worker_id"], worker["assignment_id"]))
+	# 	else:
+	# 		print("Gave qualification to {}".format(worker["worker_id"]))
 	# else:
-	# 	# Pay bonuses
-	# 	mturk.grant_bonus(worker["worker_id"], worker["assignment_id"], Price(worker["bonus"]), message)
+	# 	print("Gave qualification to {}".format(worker["worker_id"]))   
+	
+	# Pay workers
+	if current_balance < total_bonuses:
+		print("Before paying workers, we need to add to our account $", total_bonuses - current_balance, ", rounded up that's $", math.ceil(total_bonuses - current_balance))
+	else:
+		try:
+			# Pay bonuses
+			mturk.grant_bonus(worker["worker_id"], worker["assignment_id"], Price(worker["bonus"]), message)
+		except:
+			errored_workers.append(worker)
+		else:
+			print("Paid worker", worker)
 
 print(mturk.get_account_balance()[0])
+
+print("Errored:", errored_workers)
+print("Spammers:", spammers)
 
 
 
