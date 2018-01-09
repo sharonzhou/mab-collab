@@ -2,3 +2,4 @@
 __pycache__
 *.pyc
 env.sh
+mturk_transaction_history.csv
