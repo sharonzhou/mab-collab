@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from db import data, COLUMNS
 from numpy.random import beta, shuffle
 from scipy.misc import comb
@@ -6,27 +7,22 @@ from collections import defaultdict
 import itertools, os, time
 from multiprocessing import Pool
 
-# Moves are stored as Pandas dataframe
+# Moves are stored as numpy matrices
 
 def filter_for_player(moves, i_player): # Returns sublist of moves visible to i_player
-    return moves[moves['visibility'].apply(lambda v: v[i_player])]
+    return moves[moves['visibility_p{}'.format(i_player)]]
 
 def hide_for_player(moves, i_player): # Replaces the rewards not visible to i_player by NaN
-    moves = moves.copy()
-    # Sharon: [question]: why is there axis=1? print here
-    moves['reward'] = moves.apply(lambda row: row['reward'] if row['visibility'][i_player] else None, axis=1)
+    moves = np.copy(moves)
+    moves['reward'] = moves['reward'] if moves['visibility'][i_player] else None
     return moves
 
 def possibilities(moves, belief): # Generates all possible values for hidden rewards according to belief
-    # Sharon [reiterating]: so these are the moves with unseen rewards? then we want to hypothetically consider all partitions of S/F with them
-    unknown_moves = moves[moves['reward'].isna()]
-    # Sharon: this means that for a given arm, there will be at least one group. for 'control' there should be 1 group per arm (since visibility is all true)
-    # Sharon: 'real' is a boolean value of whether this df is historical real data or hypothetical.
-    # Sharon: grouping by visibility means that we have separate groups for what's seen and unseen
-    groups = unknown_moves.groupby(['arm', 'visibility', 'real']) #In each group only the number of success/failures matter (not the order of them), so we can generate all possibilities based on number of successes in each group. 'real' makes sure the hypothetical moves are not grouped with the historical real moves since we need to consider all possibilities for the hypothetical move.
-    # Sharon: this is for all permutations of n_heads across the groups
-    # Sharon [question]: why are we including the 'real'=True groups with the hypothetical ones ('real'=False) here? or are they never passed together to this function?
-    # Sharon: there is a +1 because we can have n_heads = size of group (in which case there are 0 tails)
+    unknown_moves = moves[moves['reward'] == None]
+    array([[x] for x in [ list(a[a[:,0]==i,1]) for i in n]])
+    n = unique(unknown_moves[:,0])
+    groups = np.array([x] for x in [list(unknown_moves[unknown_moves[:,0] == i, 1])] for i in n)
+    unknown_moves.groupby(['arm', 'visibility', 'real']) #In each group only the number of success/failures matter (not the order of them), so we can generate all possibilities based on number of successes in each group. 'real' makes sure the hypothetical moves are not grouped with the historical real moves since we need to consider all possibilities for the hypothetical move.
     for ns_heads in itertools.product(*[range(s+1) for s in groups.size()]):
         # Sharon: we start with our known rewards
         rewards = moves['reward'].dropna()
@@ -99,67 +95,50 @@ class Belief(defaultdict):
 
 class Visibility(object):
     def __init__(self, condition):
-        self.condition = condition
         if condition not in ['control', 'partial', 'partial_asymmetric']:
             raise Exception('Game condition not recognized')
-    # Sharon: using a generator instead of just returning a list b/c hypothetical function, defined below, yields a move
-    def possibilities(self): # Generate possible visibilities
+        self.condition = condition
         if self.condition=='control':
-            yield 1., (True, True)
+            self.visibilities = [[1., True, True]]
         elif self.condition=='partial':
-            yield 2./3., (True, False)
-            yield 1./3., (True, True)
-        # Sharon: in our new experiment with independent p's, this should be:
-            # yield 2./9., (True, True)
-            # yield 2./9., (False, False)
-            # yield 1./9., (True, False)
-            # yield 4./9., (False, True)
+            self.visibilities = [[2./3., True, False], [1./3., True, True]]
         elif self.condition=='partial_asymmetric':
-            yield 2./9., (True, True)
-            yield 2./9., (False, False)
-            yield 1./9., (True, False)
-            yield 4./9., (False, True)
-            # yield 2./3., (True, False)
-            # yield 1./3., (False, True)
+            self.visibilities = [[2./9., True, True], [2./9., False, False], [1./9., True, False], [4./9., False, True]]
 
 class Game(object):
     def __init__(self, turns, visibility=Visibility('control'), arms=[1, 2, 3, 4]):
-        # Sharon: turns is [0,1,0,1,...]
         self.turns = turns
         self.arms = arms
         self.n_players = max(turns)+1
         self.visibility = visibility
-        # Sharon: COLUMNS is from db
-        self.moves = pd.DataFrame(columns=COLUMNS)
-    def i_player(self):
-        # Sharon: is it len(self.moves) and not len(self.moves) - 1 because initially len(moves) = 0; moves are added on after i_player() is called
-        return self.turns[len(self.moves)]
+        # COLUMNS = ['player', 'arm', 'reward', 'visibility', 'real']
+        self.columns = {}
+        for i, col in enumerate(COLUMNS):
+            self.columns[col] = i
+        self.moves = np.zeros((1, len(COLUMNS)))
+        self.move_num = 0
+        print("self.moves shape", self.moves.shape)
+    def players(self):
+        print("should be self.turns for players, just # of moves ({}) {}".format(self.moves.shape[0], np.array(self.turns[:self.move_num + 1])))
+        return np.array(self.turns[:self.move_num + 1])
     def hypothetical(self, arm): # Generate possible next moves if arm is pulled
-        i_player = self.i_player()
-        for p, visibilities in self.visibility.possibilities():
-            move = pd.DataFrame({'player': [i_player], 'arm': [arm], 'reward': [None], 'visibility': [visibilities], 'real': [False]}, index=[len(self.moves)], columns=COLUMNS)
-            yield p, move
-    def stats(self):
-        ret = pd.DataFrame(columns=['arm', 'p', 'reward']+['exploit{}'.format(i) for i in range(self.n_players)])
-        i_player = self.i_player()
+        players = self.players()
+        moves = [self.visibility.visibilities[0], players, arm, self.visibility.visibilities[1], self.visibility.visibilities[2], 0]
+        return moves
+    def stats(self, room, game, i_move, condition, i_player, chosen_arm):
+        ret_col_headers = ['arm', 'p', 'reward']+['exploit{}'.format(i) for i in range(self.n_players)]
+        ret_cols = {}
+        for i, header in enumerate(ret_col_headers):
+            ret_cols[header] = i
+        players = self.players()
+        ret = np.zeros((1, len(ret_col_headers)))
         for arm in self.arms:
-            # Sharon: for each hypoth. outcome of an arm, we take the current player's belief to get the predicted reward
-            for p1, move in self.hypothetical(arm):
-                moves = self.moves.append(move)
-                player_view = hide_for_player(moves, i_player)
-                for p2, possible in possibilities(player_view, Belief(player_view)):
-                    # Sharon: extend return object 
-                    # Sharon: add what each player would exploit based on this hypothetical move (previous code did not consider exploit val of _both_ players, but only the next player's turn (in our case, that's always the partner))
-                    ret.loc[len(ret)]=[arm, p1*p2, possible.iloc[-1]['reward']]+[Belief(filter_for_player(possible, i)).exploit_value(self.arms) for i in range(self.n_players)]
-        for key in ret:
-            # Sharon: for the reward and player's exploit values, multiply by join probabilities
-            if key not in ['arm', 'p']:
-                # Sharon [question]: previous code did not multiply the exploitative value by 'p' - should we be still be doing this here? 
-                # Sharon [question cont'd]: On the one hand, I get it that they're dependent on these possible next moves, but on the other hand, in our original formalism/model, we had this exploitative value separate and outside of the hypoth. probability
-                # Sharon [remark]: pandas df's are so coool! love how you can not only extract but also do ops on everything in col 'p' like this
-                ret[key] *= ret['p']
-        ret = ret.groupby('arm', group_keys=False).sum()
-        ret = ret.reset_index()
+            # For each hypoth. outcome of an arm, we take the current player's belief to get the predicted reward
+            moves = hypothetical(arm)
+            player_view = hide_for_player(moves, players[-1])
+            poss = possibilities(player_view, Belief(player_view))
+            ret = np.array([room, game, i_move, condition, i_player, chosen_arm] + [arm, moves[0]*poss[0], poss[1]] + [Belief(filter_for_player(poss[1], i)).exploit_value(self.arms) for i in range(self.n_players)])
+        ret[2:] *= ret[1]
         return ret
     # def value(self):
     #     stats = self.stats()
@@ -170,14 +149,14 @@ class Game(object):
 
 def compute_stats(data):
     print("compute_stats", time.time())
-    first_player = data['moves'].iloc[0]['player']
-    turns = [first_player if i%2==0 else 1-first_player for i in range(len(data['moves']))]
-    game = Game(turns, visibility=Visibility(data['condition']))
+    first_player = data[db_headers['player'][0]]
+    turns = [first_player if i%2==0 else 1-first_player for i in range(len(data[db_headers['player']]))]
+    game = Game(turns, visibility=Visibility(data[db_headers['condition']]))
     ret = pd.DataFrame()
-    for i in range(len(data['moves'])):
-        game.moves = data['moves'].iloc[:i]
-        stats = game.stats()
-        stats = stats.assign(room=data['room'], game=data['game'], move=i, condition=data['condition'], player=game.i_player(), chosen_arm=data['moves'].iloc[i]['arm'])
+    for i in range(len(data[db_headers['player']])):
+        # Conversion to np: not really this for game.visibility.visibilities[0]....
+        game.moves = np.array([game.visibility.visibilities[0], data[db_headers['player']][:i], data[db_headers['chosen_arm']][:i], data[db_headers['visibility_p0']],[:i] data[db_headers['visibility_p1']][:i], data[db_headers['real']][:i]])
+        stats = game.stats(data[db_headers['room']], data[db_headers['game']], i, data[db_headers['condition']], data[db_headers['player'][i]], data[db_headers['chosen_arm'][i]])
         ret = ret.append(stats)
     print(data['room'], data['game'], time.time())
     return ret
