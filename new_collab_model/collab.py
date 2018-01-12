@@ -13,7 +13,6 @@ def filter_for_player(moves, i_player): # Returns sublist of moves visible to i_
 
 def hide_for_player(moves, i_player): # Replaces the rewards not visible to i_player by NaN
     moves = moves.copy()
-    # Sharon: [question]: why is there axis=1? print here
     moves['reward'] = moves.apply(lambda row: row['reward'] if row['visibility'][i_player] else None, axis=1)
     return moves
 
@@ -205,9 +204,11 @@ def analyze(stats):
     print(stats.groupby(['condition'])['agreement'].mean())
 
 if __name__=='__main__':
-    print("starting", time.time())
+    start_time = time.time()
+    print("starting")
     if not os.path.exists('stats.csv'):
         datas = [d for d in data()]
+        print('finished getting data; took ', time.time() - start_time, 'seconds')
         pool = Pool(3)
         results = pd.DataFrame()
         for stats in pool.map(compute_stats, datas):
