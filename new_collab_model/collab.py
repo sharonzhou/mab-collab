@@ -25,6 +25,7 @@ def possibilities(moves, belief): # Generates all possible values for hidden rew
     groups = unknown_moves.groupby(['arm', 'visibility', 'real']) #In each group only the number of success/failures matter (not the order of them), so we can generate all possibilities based on number of successes in each group. 'real' makes sure the hypothetical moves are not grouped with the historical real moves since we need to consider all possibilities for the hypothetical move.
     # Sharon: this is for all permutations of n_heads across the groups
     # Sharon [question]: why are we including the 'real'=True groups with the hypothetical ones ('real'=False) here? or are they never passed together to this function?
+    # Dorsa: We are including the hypothetical move as a single group, and passing it to this function as well. We need to consider both possibilities when the hypothetical move comes head or tail.
     # Sharon: there is a +1 because we can have n_heads = size of group (in which case there are 0 tails)
     for ns_heads in itertools.product(*[range(s+1) for s in groups.size()]):
         # Sharon: we start with our known rewards
@@ -35,6 +36,8 @@ def possibilities(moves, belief): # Generates all possible values for hidden rew
             # Sharon: we will in hypothetical rewards based on n_heads across an unknown group
             # Sharon: the resulting variable rewards will be all known values, followed by hypoth. heads, hypoth. tails for first group, then hypoth. heads, hypoth. tails for next group, etc.
             # Sharon: e.g. rewards = [ known_1 known_0 ... unknown_1 unknown_1 unknown_0 ... unknown_1 unknown_1 unknown_0]
+            # Dorsa: True, that is the order in which generated rewards are stored in the variable 'rewards'. But note that pandas also a row index which here would be the index of the original move. So the row indices capture the relationship to the orignal moves.
+            # Dorsa: So the line: possible_moves['reward'] = rewards, correctly fills in the generated rewards.
             rewards = rewards.append(group.iloc[:n_heads]['reward'].fillna(1.))
             rewards = rewards.append(group.iloc[n_heads:]['reward'].fillna(0.))
             # Sharon: here (after outer for-loop is over) we consider all the combs from partitions of heads/tails in this group
@@ -68,6 +71,9 @@ class Beta(object):
         for i in range(one):
             ret *= (self.a+i)/(self.a+self.b+i)
         # Sharon [question]: shouldn't this look at the next zero samples like this? for i in range(one, one+zero):
+        # Dorsa: You can change the range for i, but then you'd have to modify the factor you are multiplying by. 
+        # Dorsa: The answer we want to return is exactly this: [(a)(a+1)...(a+one-1)] * [(b)(b+1)...(b+zero-1)] / [(a+b)(a+b+1)...(a+b+one+zero-1)]
+        # Dorsa: You can check that these two for loops exactly compute the above formula, which is symmetric.
         for i in range(zero):
             ret *= (self.b+i)/(self.a+self.b+one+i)
         return ret
@@ -124,6 +130,7 @@ class Visibility(object):
 class Game(object):
     def __init__(self, turns, visibility=Visibility('control'), arms=[1, 2, 3, 4]):
         # Sharon: turns is [0,1,0,1,...]
+        # Dorsa: or [1,0,1,0,...]
         self.turns = turns
         self.arms = arms
         self.n_players = max(turns)+1
@@ -132,6 +139,7 @@ class Game(object):
         self.moves = pd.DataFrame(columns=COLUMNS)
     def i_player(self):
         # Sharon: is it len(self.moves) and not len(self.moves) - 1 because initially len(moves) = 0; moves are added on after i_player() is called
+        # Dorsa: Yes
         return self.turns[len(self.moves)]
     def hypothetical(self, arm): # Generate possible next moves if arm is pulled
         i_player = self.i_player()
@@ -154,7 +162,9 @@ class Game(object):
             # Sharon: for the reward and player's exploit values, multiply by join probabilities
             if key not in ['arm', 'p']:
                 # Sharon [question]: previous code did not multiply the exploitative value by 'p' - should we be still be doing this here? 
+                # Dorsa: 'p' here is the probability of getting to these particular exploit values. We always need to take expectation over these exploit values, and that is why we are multiplying by 'p', so that we can later add them on, and get the expectation.
                 # Sharon [question cont'd]: On the one hand, I get it that they're dependent on these possible next moves, but on the other hand, in our original formalism/model, we had this exploitative value separate and outside of the hypoth. probability
+                # Dorsa: Exploit value is really the KG value without the fixed current exploit value taken out. The current exploit value does not depend on the hypothetical arm we pull, and so has no effect on the values we compute for arms. So instead the difference, we are just computing the expectation of the exploit value after the hypothetical move.
                 # Sharon [remark]: pandas df's are so coool! love how you can not only extract but also do ops on everything in col 'p' like this
                 ret[key] *= ret['p']
         ret = ret.groupby('arm', group_keys=False).sum()
