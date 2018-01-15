@@ -172,11 +172,17 @@ if __name__=='__main__':
     if not os.path.exists('stats.csv'):
         datas = [d for d in data()]
         print('finished getting data; took ', time.time() - start_time, 'seconds')
-        pool = Pool(3)
         results = pd.DataFrame()
-        for stats in pool.map(compute_stats, datas):
-            stats.to_csv('running_stats.csv', mode='a')
+
+        # pool = Pool(3)
+        # for stats in pool.map(compute_stats, datas):
+        #     stats.to_csv('running_stats.csv', mode='a')
+        #     results = results.append(stats)
+
+        for d in datas:
+            stats = compute_stats(d)
             results = results.append(stats)
+
         results.to_csv('stats.csv')
     results = pd.read_csv('stats.csv')
     analyze(results)
