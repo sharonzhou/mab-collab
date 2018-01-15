@@ -14,10 +14,12 @@ def filter_for_player(moves, i_player): # Returns sublist of moves visible to i_
 
 def hide_for_player(moves, i_player): # Replaces the rewards not visible to i_player by NaN
     moves = np.copy(moves)
-    moves['reward'] = moves['reward'] if moves['visibility'][i_player] else None
+    moves['reward'] = np.where(moves['visibility'][i_player], moves['reward'], None)
     return moves
 
 def possibilities(moves, belief): # Generates all possible values for hidden rewards according to belief
+    poss = np.zeros((shape), dtype, order)
+
     unknown_moves = moves[moves['reward'] == None]
     array([[x] for x in [ list(a[a[:,0]==i,1]) for i in n]])
     n = unique(unknown_moves[:,0])
@@ -131,32 +133,26 @@ class Game(object):
         for i, header in enumerate(ret_col_headers):
             ret_cols[header] = i
         players = self.players()
-        ret = np.zeros((1, len(ret_col_headers)))
-        for arm in self.arms:
+        ret = np.zeros((len(self.arms), len(ret_col_headers)))
+        for k, arm in enumerate(self.arms):
             # For each hypoth. outcome of an arm, we take the current player's belief to get the predicted reward
             moves = hypothetical(arm)
             player_view = hide_for_player(moves, players[-1])
             poss = possibilities(player_view, Belief(player_view))
-            ret = np.array([room, game, i_move, condition, i_player, chosen_arm] + [arm, moves[0]*poss[0], poss[1]] + [Belief(filter_for_player(poss[1], i)).exploit_value(self.arms) for i in range(self.n_players)])
-        ret[2:] *= ret[1]
+            ret[k] = np.array([room, game, i_move, condition, i_player, chosen_arm] + [arm, moves[0]*poss[0], poss[1]] + [Belief(filter_for_player(poss[1], i)).exploit_value(self.arms) for i in range(self.n_players)])
+        ret[2:] *= ret[ret_cols['p']]
         return ret
-    # def value(self):
-    #     stats = self.stats()
-    #     value = stats['reward'].copy()
-    #     for i in range(self.n_players):
-    #         value += stats['exploit{}'.format(i)]*discounted_sum(self.turns[len(self.moves)+1:], i)
-    #     return value
 
 def compute_stats(data):
     print("compute_stats", time.time())
-    first_player = data[db_headers['player'][0]]
+    first_player = data[db_headers['player']][0]
     turns = [first_player if i%2==0 else 1-first_player for i in range(len(data[db_headers['player']]))]
     game = Game(turns, visibility=Visibility(data[db_headers['condition']]))
     ret = pd.DataFrame()
     for i in range(len(data[db_headers['player']])):
         # Conversion to np: not really this for game.visibility.visibilities[0]....
-        game.moves = np.array([game.visibility.visibilities[0], data[db_headers['player']][:i], data[db_headers['chosen_arm']][:i], data[db_headers['visibility_p0']],[:i] data[db_headers['visibility_p1']][:i], data[db_headers['real']][:i]])
-        stats = game.stats(data[db_headers['room']], data[db_headers['game']], i, data[db_headers['condition']], data[db_headers['player'][i]], data[db_headers['chosen_arm'][i]])
+        game.moves = np.array([game.visibility.visibilities[0], data[db_headers['player']][:i], data[db_headers['chosen_arm']][:i], data[db_headers['visibility_p0']][:i], data[db_headers['visibility_p1']][:i], data[db_headers['real']][:i]])
+        stats = game.stats(data[db_headers['room']], data[db_headers['game']], i, data[db_headers['condition']], data[db_headers['player']][i], data[db_headers['chosen_arm']][i])
         ret = ret.append(stats)
     print(data['room'], data['game'], time.time())
     return ret
@@ -184,15 +180,23 @@ def analyze(stats):
     print(stats.groupby(['condition'])['agreement'].mean())
 
 if __name__=='__main__':
-    print("starting", time.time())
-    if not os.path.exists('stats.csv'):
-        datas = [d for d in data()]
+    start_time = time.time()
+    print("starting other", time.time())
+    if not os.path.exists('stats_np.csv'):
+        datas = data()
+        print('finished getting data; took ', time.time() - start_time, 'seconds')
         pool = Pool(3)
-        results = pd.DataFrame()
+        results = []
         for stats in pool.map(compute_stats, datas):
-            stats.to_csv('running_stats.csv', mode='a')
-            results = results.append(stats)
-        results.to_csv('stats.csv')
-    results = pd.read_csv('stats.csv')
-    analyze(results)
+            results.append(stats)
+        with open('stats_np.csv', 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow(['room', 'game', 'move', 'condition', 'player', 'chosen_arm', 'arm', 'value']) #change
+            for i, room in enumerate(results):
+                for j, game in enumerate(room):
+                    writer.writerow(game)
+    results = pd.read_csv('stats_np.csv')
+
+    # results = pd.read_csv('stats.csv')
+    # analyze(results)
     #print(results)

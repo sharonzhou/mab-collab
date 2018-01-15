@@ -3,7 +3,7 @@ from greedy import Greedy
 # from wsls import WSLS
 import pandas as pd
 import numpy as np
-from dbnp import data, db_headers
+from dbnpgreedy import data, db_headers
 from numpy.random import beta, shuffle
 from scipy.misc import comb
 from collections import defaultdict
