@@ -20,6 +20,7 @@ if __name__=='__main__':
 
     results = pd.read_csv('intermediate_stats.csv')
     stats = pd.read_csv('all_agreements.csv')
+    print(stats.count()[0], "iterations of parameter sets")
 
     max_stats = stats.max(axis=0)
 
