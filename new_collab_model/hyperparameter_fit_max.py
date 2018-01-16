@@ -18,7 +18,6 @@ if __name__=='__main__':
     print(len(rooms), rooms)
     print(condition_counts)
 
-    results = pd.read_csv('intermediate_stats.csv')
     stats = pd.read_csv('all_agreements.csv')
     print(stats.count()[0], "iterations of parameter sets")
 
