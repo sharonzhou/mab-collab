@@ -5,6 +5,7 @@ from scipy.misc import comb
 from collections import defaultdict
 import itertools, os, time
 from multiprocessing import Pool
+import multiprocessing
 
 # Moves are stored as Pandas dataframe
 
@@ -123,15 +124,9 @@ class Game(object):
         ret = ret.groupby('arm', group_keys=False).sum()
         ret = ret.reset_index()
         return ret
-    # def value(self):
-    #     stats = self.stats()
-    #     value = stats['reward'].copy()
-    #     for i in range(self.n_players):
-    #         value += stats['exploit{}'.format(i)]*discounted_sum(self.turns[len(self.moves)+1:], i)
-    #     return value
 
 def compute_stats(data):
-    print("compute_stats", time.time())
+    print("compute_stats", time.time(), data['room'])
     first_player = data['moves'].iloc[0]['player']
     turns = [first_player if i%2==0 else 1-first_player for i in range(len(data['moves']))]
     game = Game(turns, visibility=Visibility(data['condition']))
@@ -141,7 +136,11 @@ def compute_stats(data):
         stats = game.stats()
         stats = stats.assign(room=data['room'], game=data['game'], move=i, condition=data['condition'], player=game.i_player(), chosen_arm=data['moves'].iloc[i]['arm'])
         ret = ret.append(stats)
-    print(data['room'], data['game'], time.time())
+    if not os.path.exists('intermediate_stats2.csv'):
+        stats.to_csv('intermediate_stats2.csv')            
+    else:
+        stats.to_csv('intermediate_stats2.csv', mode='a', header=False)
+    print("Wrote stats to csv", data['room'], data['game'], time.time())
     return ret
 
 def analyze(stats):
@@ -169,21 +168,17 @@ def analyze(stats):
 if __name__=='__main__':
     start_time = time.time()
     print("starting")
-    if not os.path.exists('stats.csv'):
-        datas = [d for d in data()]
+    computed_rooms = ['91', '87', '80', '84', '85', '89', '92', '81', '1', '13', '3', '21', '8', '12', '19', '4', '61', '90', '88', '30', '15', '83', '72', '69', '35', '6', '5', '33', '31', '78', '70', '71', '64', '26', '28', '32', '68', '34', '25', '76', '24', '77', '27', '79', '51', '49', '73', '40', '43', '55']
+    if not os.path.exists('stats2.csv'):
+        datas = [d for d in data() if str(d['room']) not in computed_rooms]
         print('finished getting data; took ', time.time() - start_time, 'seconds')
         results = pd.DataFrame()
 
-        # pool = Pool(3)
-        # for stats in pool.map(compute_stats, datas):
-        #     stats.to_csv('running_stats.csv', mode='a')
-        #     results = results.append(stats)
-
-        for d in datas:
-            stats = compute_stats(d)
+        pool = Pool(multiprocessing.cpu_count())
+        for stats in pool.map(compute_stats, datas):
             results = results.append(stats)
-
-        results.to_csv('stats.csv')
-    results = pd.read_csv('stats.csv')
-    analyze(results)
+        results.to_csv('stats2.csv')
+        print("Completed", time.time())
+    # results = pd.read_csv('stats2.csv')
+    # analyze(results)
     #print(results)
