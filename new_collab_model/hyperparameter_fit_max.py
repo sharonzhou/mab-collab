@@ -69,7 +69,9 @@ if __name__=='__main__':
     print("Average agreement per room:")
     pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(room_agreements)
-    print("Average agreement overall: {}".format(mean_agreement))
+    print("Average agreement overall (of {} rooms): {}".format(len(room_agreements), mean_agreement))
+
+    # partial_asymmetric that are not done: 9, 43, 49, 61, 7, 64, 51, 55, 68
 
     # Compute agreement on fitting params to all computed stats (vs. just on 1st game)
     # agreements = {}
