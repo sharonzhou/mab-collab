@@ -1,0 +1,1 @@
+# Collaborative game setting
